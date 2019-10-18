@@ -5,40 +5,40 @@
 
 int main(){
 
-void jogada(void);
+	void jogada(void);
 
 
-int p1,p2;
-srand(time(NULL));
+	int p1,p2;
+	srand(time(NULL));
 
-p1 = rand()%2;
-printf("%d\n",p1);
+	p1 = rand()%2;
+	printf("%d\n",p1);
 
-if(p1 == 1){
-	p2 = 0;
-}else{
-	p2 = 1;
-}
+	if(p1 == 1){
+		p2 = 0;
+	}else{
+		p2 = 1;
+	}
+	jogada(void);
 
-printf("Vez do jogador 1.\n");
-	for (i=0; i<a; i++)
-		for(j=o; j<b; j++)
-	{
-		scanf("%d",&tab[i][j])
-		}
+	if(tab[x][y] == NULL){
+		continue;
+	}else{
+		printf("A posição já está ocupada.\n");
+		jogada(void);
+	}
+
+	tab[x][y] = p1;
+
+
+
 
 	return 0;
 }
 
 void jogada(void){
-printf("Insira uma linha: \n");
-scanf("%d",&x);
-printf("Insira uma coluna\n");
-scanf("%d",&y);
+	printf("Insira uma linha: \n");
+	scanf("%d",&x);
+	printf("Insira uma coluna\n");
+	scanf("%d",&y);
 
-if(tab[x][y] == NULL){
-	continue;
-}else{
-	printf("A posição já está ocupada.\n");
-}
-}
