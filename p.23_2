@@ -9,9 +9,11 @@
 
 	}jogador;
 
+	void jogada(void);
 
 int main(){
-
+	int pt;
+	int tab[x][y];
 	jogador player1;
 	jogador player2;
 	srand(time(NULL));
@@ -23,6 +25,10 @@ int main(){
 	printf("Insira o nome do segundo jogador: ");
 	scanf("%s",player2.nome);
 	printf("\n");
+
+	int nump;
+	printf("Insira o número de partidas: \n");
+	scanf("%d",&nump);
 
 	num = rand()%2;
 
@@ -36,6 +42,13 @@ int main(){
 		player2.cor == P;
 		player1.cor == B;
 	}
+	for(int i=0; i>nump ;1++)
+	{
+		if(nump%2==0){
+			printf("VEZ DO JOGADOR 1\n");
+			jogada(void)
+		}
+	}
 
 
 	return 0;
@@ -43,10 +56,13 @@ int main(){
 
 
 
-void jogada(void){
+void jogada(){
+
+	int tab[x][y];
 	printf("Insira uma linha: \n");
 	scanf("%d",&x);
 	printf("Insira uma coluna\n");
 	scanf("%d",&y);
-	if(tab[x][y] == NULL){
-		continue;
+	if(tab[x][y] == '-'){
+		
+
