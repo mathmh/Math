@@ -18,6 +18,8 @@ int main(){
 	jogador player1;
 	jogador player2;
 	srand(time(NULL));
+	int num;
+	char x[],y[];
 
 	printf("Insira o nome do primeiro jogador: ");
 	scanf("%s",player1.nome);
@@ -69,8 +71,8 @@ void jogada1(){
 	scanf("%d",&x);
 	printf("Insira uma coluna\n");
 	scanf("%d",&y);
-	if(tab[x][y] == '-'){
-		tab[x][y] = P
+	if(tab[x][y] == {'-'}){
+		tab[x][y] = {'P'};
 	}
 }
 void jogada2(){
@@ -82,6 +84,6 @@ void jogada2(){
 	printf("Insira uma coluna\n");
 	scanf("%d",&y);
 	if(tab[x][y] == '-'){
-		tab[x][y] = B
+		tab[x][y] = {'B'};
 	}
 }
