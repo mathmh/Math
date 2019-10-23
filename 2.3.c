@@ -79,6 +79,7 @@ void jogada1(){
 		printf("ESPAÇO JÁ OCUPADO\n");
 		jogada2();
 }
+}
 void jogada2(){
 
 	int tab[x][y];
