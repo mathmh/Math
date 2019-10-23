@@ -20,6 +20,8 @@ int main(){
 	srand(time(NULL));
 	int num;
 	char x[],y[];
+	char P[] = {'P'};
+	char B[] = {'B'};
 
 	printf("Insira o nome do primeiro jogador: ");
 	scanf("%s",player1.nome);
@@ -72,8 +74,10 @@ void jogada1(){
 	printf("Insira uma coluna\n");
 	scanf("%d",&y);
 	if(tab[x][y] == {'-'}){
-		tab[x][y] = {'P'};
-	}
+		tab[x][y] = P;
+	}else{
+		printf("ESPAÇO JÁ OCUPADO\n");
+		jogada2();
 }
 void jogada2(){
 
@@ -84,6 +88,9 @@ void jogada2(){
 	printf("Insira uma coluna\n");
 	scanf("%d",&y);
 	if(tab[x][y] == '-'){
-		tab[x][y] = {'B'};
+		tab[x][y] = B;
+	}else{
+		printf("ESPAÇO JÁ OCUPADO\n");
+		jogada2();
 	}
 }
