@@ -50,9 +50,9 @@ int main(){
 		jogada2();
 	}
 
-	for(int i=1; i<=nump ;i++)
+	for(int i=0; i<=nump ;i++)
 	{
-		if((nump-2)%2==0){
+		if(nump%2==0){
 			jogada1()
 		}else{
 			jogada2()
