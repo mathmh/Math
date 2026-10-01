@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Panasonic GT68 | Veja na sua cozinha</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  :root {
+    --azul: #0041c0;
+    --azul-escuro: #00308f;
+    --preto: #111214;
+    --cinza: #6b6f76;
+    --linha: #e6e8ec;
+    --fundo: #f4f5f7;
+    --branco: #ffffff;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--branco); color: var(--preto); font-family: "Inter", "Helvetica Neue", Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+  body { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+  a { color: inherit; }
+
+  header { background: var(--azul); color: var(--branco); padding: 14px 20px; display: flex; justify-content: center; }
+  header span { font-weight: 700; font-size: 20px; letter-spacing: 0.5px; }
+
+  .hero { max-width: 1080px; margin: 0 auto; padding: 28px 20px 8px; display: grid; gap: 24px; }
+  .kicker { color: var(--azul); font-size: 12px; font-weight: 600; letter-spacing: 3px; text-transform: uppercase; }
+  h1 { font-size: clamp(28px, 6vw, 44px); line-height: 1.1; font-weight: 700; margin-top: 8px; }
+  .sub { color: var(--cinza); font-size: 16px; line-height: 1.5; margin-top: 12px; max-width: 460px; }
+
+  .viewer-wrap { position: relative; background: radial-gradient(ellipse at 50% 40%, #ffffff 0%, var(--fundo) 70%); border-radius: 20px; overflow: hidden; }
+  .produto { display: block; width: 100%; height: clamp(320px, 58vh, 520px); object-fit: contain; padding: 24px; }
+  .produto.vazio { visibility: hidden; }
+  [hidden] { display: none !important; }
+
+  .dims { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+  .dims div { border: 1px solid var(--linha); border-radius: 10px; padding: 10px 14px; }
+  .dims b { display: block; font-size: 18px; color: var(--azul); }
+  .dims small { color: var(--cinza); font-size: 12px; }
+
+  .ctas { display: grid; gap: 10px; margin-top: 22px; max-width: 420px; }
+  .btn { display: flex; align-items: center; justify-content: center; gap: 10px; border: 0; border-radius: 6px; padding: 16px 20px; font: 600 15px "Inter", Arial, sans-serif; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; text-decoration: none; }
+  .btn-ar { background: var(--azul); color: var(--branco); }
+  .btn-ar:active { background: var(--azul-escuro); }
+  .btn-sec { background: var(--branco); color: var(--azul); border: 1.5px solid var(--azul); }
+  .note { font-size: 13px; color: var(--cinza); line-height: 1.5; display: none; }
+  .note.show { display: block; }
+
+  .qr { display: none; margin-top: 22px; gap: 16px; align-items: center; border: 1px solid var(--linha); border-radius: 14px; padding: 16px; max-width: 420px; }
+  .qr.show { display: flex; }
+  .qr #qrcode { flex: 0 0 auto; background: var(--branco); padding: 6px; }
+  .qr p { font-size: 14px; line-height: 1.5; color: var(--cinza); }
+  .qr p b { color: var(--preto); }
+
+  .steps { max-width: 1080px; margin: 40px auto 0; padding: 0 20px; }
+  .steps h2 { font-size: 22px; font-weight: 700; margin-bottom: 18px; }
+  .steps ol { list-style: none; display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+  .steps li { background: var(--fundo); border-radius: 14px; padding: 18px; font-size: 14px; line-height: 1.5; color: var(--cinza); }
+  .steps li b { display: block; color: var(--preto); font-size: 15px; margin-bottom: 4px; }
+  .steps li span { display: inline-flex; width: 28px; height: 28px; border-radius: 50%; background: var(--azul); color: var(--branco); font-weight: 700; align-items: center; justify-content: center; margin-bottom: 10px; }
+
+  .tagline { text-align: center; padding: 48px 20px; }
+  .tagline p { font-size: 16px; letter-spacing: 3px; text-transform: uppercase; line-height: 1.6; }
+  .tagline p b { font-weight: 700; }
+
+  footer { background: var(--azul); color: var(--branco); text-align: center; padding: 18px 20px; font-size: 12px; letter-spacing: 1px; }
+
+  @media (min-width: 900px) {
+    .hero { grid-template-columns: 1fr 1.25fr; align-items: center; padding-top: 48px; }
+    .viewer-wrap { order: 2; }
+  }
+</style>
+</head>
+<body>
+
+<header><span>Panasonic</span></header>
+
+<section class="hero">
+  <div class="viewer-wrap">
+    <!-- imagem fixa até o modelo 3D ficar pronto; trocar o src pela foto do produto -->
+    <img class="produto" id="foto" src="microondas-gt68.png" alt="Micro-ondas Panasonic GT68 Black Glass" onerror="this.classList.add('vazio')">
+  </div>
+
+  <div>
+    <p class="kicker">Micro-ondas GT68 · Black Glass</p>
+    <h1>Veja como ele fica na sua cozinha</h1>
+    <p class="sub">Coloque o micro-ondas em tamanho real na sua bancada e confira se ele cabe no seu espaço antes de comprar.</p>
+
+    <div class="dims">
+      <div><b>52 cm</b><small>largura</small></div>
+      <div><b>32,5 cm</b><small>altura</small></div>
+      <div><b>42,7 cm</b><small>profundidade</small></div>
+    </div>
+
+    <div class="ctas">
+      <!-- realidade aumentada desligada até o modelo 3D ficar pronto (remover os "hidden" para reativar) -->
+      <button class="btn btn-ar" id="btnAR" hidden>Ver na minha cozinha</button>
+      <!-- trocar pelo link do produto na loja Panasonic (com UTMs da jornada) -->
+      <a class="btn btn-sec" id="btnBuy" href="#">Comprar agora</a>
+      <p class="note" id="noteMobile">Seu aparelho não tem suporte a realidade aumentada. Gire o micro-ondas em 3D acima para ver todos os detalhes.</p>
+    </div>
+
+    <div class="qr" id="qrBox" hidden>
+      <div id="qrcode"></div>
+      <p><b>Abra no celular</b><br>Aponte a câmera para o código e veja o micro-ondas na sua bancada em tamanho real.</p>
+    </div>
+  </div>
+</section>
+
+<section class="steps" hidden>
+  <h2>Como funciona</h2>
+  <ol>
+    <li><span>1</span><b>Toque em "Ver na minha cozinha"</b>Permita o acesso à câmera do celular.</li>
+    <li><span>2</span><b>Aponte para a bancada</b>Movimente o celular devagar até a superfície ser reconhecida.</li>
+    <li><span>3</span><b>Posicione o micro-ondas</b>Ele aparece em tamanho real. Arraste para ajustar o lugar e gire com dois dedos.</li>
+  </ol>
+</section>
+
+<section class="tagline">
+  <p>Parece mágica, mas é <b>Panasonic</b>.<br>O melhor da tecnologia japonesa no toque de um botão.</p>
+</section>
+
+<footer>Imagem ilustrativa. Medidas conforme ficha técnica do produto.</footer>
+
+<script>
+(function () {
+  /* Rastreamento: no CloudPage, troque o console.log por um POST para uma
+     CloudPage de coleta (SSJS gravando em DE) com e-mail/subscriberkey da URL. */
+  function track(evento, extra) {
+    try {
+      var dados = { evento: evento, modelo: 'NN-GT68LB', ts: new Date().toISOString(), extra: extra || '' };
+      console.log('[track]', dados);
+    } catch (e) {}
+  }
+
+  document.getElementById('btnBuy').addEventListener('click', function () { track('clique_comprar'); });
+})();
+</script>
+</body>
+</html>
