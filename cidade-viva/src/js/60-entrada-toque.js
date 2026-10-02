@@ -1,6 +1,6 @@
 /* ================= Entrada ================= */
 const ptrs=new Map(); let drag=null, pinch=null, painting=null;
-function pickG(sx,sy){const [wx,wy]=s2w(sx,sy); let [gx,gy]=w2g(wx,wy); for(let k=0;k<3;k++){const x=Math.floor(gx),y=Math.floor(gy); const z=inMap(x,y)?hAt(clamp(gx,x,x+.999),clamp(gy,y,y+.999)):0; [gx,gy]=w2g(wx,wy+z);} return [gx,gy];}
+function pickG(sx,sy){const [wx,wy]=s2w(sx,sy); let [gx,gy]=w2g(wx,wy); for(let k=0;k<6;k++){const x=Math.floor(gx),y=Math.floor(gy); const z=inMap(x,y)?hAt(clamp(gx,x,x+.999),clamp(gy,y,y+.999)):0; [gx,gy]=w2g(wx,wy+z);} return [gx,gy];}
 function tileAt(sx,sy){const [gx,gy]=pickG(sx,sy); return [Math.floor(gx),Math.floor(gy)];}
 function qAt(sx,sy){const [gx,gy]=pickG(sx,sy); return [Math.floor(gx*2),Math.floor(gy*2)];}
 function curOpt(){const tl=TOOLS[mode.tool]; if(!tl)return 0; if(mode.tool==='nivelar')return painting&&painting.level!=null?painting.level:0; return tl.opt==='bridge'?OPT.bm:tl.opt==='pave'?OPT.pv:tl.opt==='fence'?OPT.fc:tl.opt==='soil'?OPT.soil:0;}

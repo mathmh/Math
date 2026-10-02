@@ -116,11 +116,11 @@ const tileBusy=(x,y)=>D.occ[y*N+x]!==-1;
 function toolCost(tool,opt){if(tool==='ponte'){const m=BRIDGES[opt||0]; return {c:m.c,mat:m.mat};} return {c:TOOLS[tool].cost,mat:null};}
 function toolCheck(tool,x,y,opt){const tl=TOOLS[tool];
   if(tl.q){const qx=x,qy=y; if(qx<0||qy<0||qx>=Q2||qy>=Q2)return 'fora'; x=qx>>1; y=qy>>1;
-    if(!isUl(x,y))return 'Área não comprada'; const i=y*N+x, qi=qy*Q2+qx;
+    if(!isUl(x,y))return 'Área não comprada'; if(peakZone(x,y))return 'A serra é só paisagem'; const i=y*N+x, qi=qy*Q2+qx;
     if(tool==='apagar')return (G.pv[qi]||G.fc[qi])?'':'já';
     if(G.tr[i]===1||G.tr[i]===2)return 'Não dá na água'; if(tileBusy(x,y))return 'Ocupado'; if(G.rd[i]||G.rl[i])return 'Tem rua ou trilho aqui'; if(G.ob[i])return 'Limpe o obstáculo primeiro'; if(G.rp[i])return 'Não dá em rampa';
     if(tool==='piso'&&G.pv[qi]===(opt||0)+1)return 'já'; if(tool==='muro'&&G.fc[qi]===(opt||0)+1)return 'já'; return '';}
-  if(!inMap(x,y))return 'fora'; if(!isUl(x,y))return 'Área não comprada';
+  if(!inMap(x,y))return 'fora'; if(!isUl(x,y))return 'Área não comprada'; if(peakZone(x,y))return 'A serra é só paisagem';
   const i=y*N+x, tr=G.tr[i], rd=G.rd[i], busy=tileBusy(x,y), wat=tr===1||tr===2;
   switch(tool){
     case 'rua': if(wat)return 'Na água use a Ponte'; if(busy)return 'Ocupado'; if(G.ob[i])return 'Limpe o obstáculo primeiro'; if(rd===1)return 'já'; return '';

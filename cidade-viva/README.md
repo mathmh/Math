@@ -47,7 +47,12 @@ O script junta `src/head.html` (HTML e CSS), todos os arquivos `src/js/*.js` em 
 
 ## Relevo
 
-As montanhas são geradas pelas alturas dos cantos de cada quadrado, e cantos vizinhos diferem no máximo 1 nível. Assim cada quadrado vira plano, rampa ou canto, e as encostas emendam sem degraus. Paredão só existe na boca do túnel. A luz é calculada por canto e esticada em degradê (`shadeMaps` em `52-chao-ruas-relevo.js`), e a neve dos picos entra pelo mesmo degradê. À noite, os morros de cada fatia escurecem de uma vez, sem emenda entre quadrados. Saves antigos ganham o relevo novo só nas áreas ainda não compradas (`refreshTerrain`).
+O mapa tem dois platôs com paredões de rocha: o **A** (nível 3), colado na cidade e com a boca do túnel, e o **B** (nível 6), atrás dele. No fundo fica a **serra**, uma faixa de pedra com picos nevados e neblina, que é só paisagem e não aceita construção. As ruas que sobem já vêm prontas e podem ser demolidas.
+
+- Formato dos platôs, serra e ruas prontas: `plateauShape`, `peakZone` e `presetRoads` em `30-mapa-terreno-save.js`.
+- Desenho do paredão de rocha (`rockFace`), da luz em degradê (`shadeMaps`) e dos picos (`drawPeak`): `52-chao-ruas-relevo.js`.
+- Neblina da serra: começo de `58-animacoes.js`.
+- Saves antigos ganham o relevo novo só nas áreas ainda não compradas (`refreshTerrain`, versão `TERR_VER`).
 
 ## Desempenho
 

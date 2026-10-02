@@ -40,7 +40,7 @@ const popc=m=>{let c=0;while(m){c+=m&1;m>>=1;}return c;};
 function dist(a,b){const aw=fw(a),ah=fh(a),bw=fw(b),bh=fh(b);
   const dx=Math.max(0,b.x-(a.x+aw-1),a.x-(b.x+bw-1)), dy=Math.max(0,b.y-(a.y+ah-1),a.y-(b.y+bh-1)); return Math.max(dx,dy);}
 function stationLinked(b){const w=fw(b),h=fh(b); for(let i=-1;i<=w;i++)for(let j=-1;j<=h;j++){if(i>=0&&i<w&&j>=0&&j<h)continue; const X=b.x+i,Y=b.y+j; if(inMap(X,Y)&&D.rail[Y*N+X])return [X,Y];} return null;}
-function freeTile(x,y,ignore,water){if(!isUl(x,y))return false; const i=y*N+x; if(!water&&(G.tr[i]===1||G.tr[i]===2))return false; if(G.rd[i]||G.rl[i]||G.ob[i]||qHas(x,y))return false;
+function freeTile(x,y,ignore,water){if(!isUl(x,y)||peakZone(x,y))return false; const i=y*N+x; if(!water&&(G.tr[i]===1||G.tr[i]===2))return false; if(G.rd[i]||G.rl[i]||G.ob[i]||qHas(x,y))return false;
   const o=D.occ[i]; return o===-1||o===ignore;}
 function canPlace(k,x,y,f,ignore){const t=T[k],w=f?t.h:t.w,h=f?t.w:t.h; let L=null, wat=0, land=0; if(placeRule(t,x,y,w,h))return false;
   for(let dy=0;dy<h;dy++)for(let dx=0;dx<w;dx++){const X=x+dx,Y=y+dy; if(!inMap(X,Y))return false; const i=Y*N+X, isW=G.tr[i]===1||G.tr[i]===2;
@@ -51,6 +51,7 @@ function canPlace(k,x,y,f,ignore){const t=T[k],w=f?t.h:t.w,h=f?t.w:t.h; let L=nu
   if(t.port&&L!==0)return false;
   return true;}
 function whyNot(k,x,y,f){const t=T[k],w=f?t.h:t.w,h=f?t.w:t.h; let lv=null; const pr=placeRule(t,x,y,w,h); if(pr)return pr;
+  for(let dy=0;dy<h;dy++)for(let dx=0;dx<w;dx++)if(peakZone(x+dx,y+dy))return 'A serra é só paisagem';
   for(let dy=0;dy<h;dy++)for(let dx=0;dx<w;dx++){const X=x+dx,Y=y+dy; if(!isUl(X,Y))return 'Área não comprada'; const i=Y*N+X;
     if(G.ob[i])return 'Limpe os obstáculos'; if(G.rp[i])return 'Não dá pra construir em rampa'; if(lv==null)lv=G.ht[i]; else if(lv!==G.ht[i]&&!(G.tr[i]===1))return 'O chão precisa estar nivelado';}
   if(t.port)return 'O porto precisa da metade direita sobre a água';

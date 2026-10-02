@@ -33,7 +33,7 @@ function tileTop(c,x,y){const i=y*N+x; if(G.pv[(y*2)*Q2+x*2]||G.pv[(y*2)*Q2+x*2+
 /* ================= Chão ================= */
 function visRange(){const pts=[s2w(0,0),s2w(VW,0),s2w(0,VH),s2w(VW,VH)].map(p=>w2g(p[0],p[1]+40));
   let x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity; for(const [x,y] of pts){x0=Math.min(x0,x);y0=Math.min(y0,y);x1=Math.max(x1,x);y1=Math.max(y1,y);}
-  return [clamp(Math.floor(x0)-2,0,N-1),clamp(Math.floor(y0)-2,0,N-1),clamp(Math.ceil(x1)+8,0,N-1),clamp(Math.ceil(y1)+8,0,N-1)];}
+  return [clamp(Math.floor(x0)-2,0,N-1),clamp(Math.floor(y0)-2,0,N-1),clamp(Math.ceil(x1)+13,0,N-1),clamp(Math.ceil(y1)+13,0,N-1)];}
 let mapVer=1, geoVer=1;
 const elev=i=>G.ht[i]>0||G.rp[i]>0;
 
@@ -78,38 +78,33 @@ function dPlotAt(c,w,h,cr,p,ready){const i=.06; const Pz=(a,bb)=>P(a,bb,0); poly
 const LUZ=(()=>{const v=[-1,-.45,1.35],l=Math.hypot(...v); return v.map(a=>a/l);})();
 function slopeLight(A,B){const nx=-A/38,ny=-B/38, l=Math.hypot(nx,ny,1); return ((nx*LUZ[0]+ny*LUZ[1]+LUZ[2])/l)/LUZ[2];}
 /* ---- Colunas de relevo (paredes e topo de cada quadrado elevado) ---- */
-const CLIFF={0:'#8a7356',3:'#c9b07a',4:'#c79a5a',5:'#7d5a3a',6:'#9aa3ab',7:'#74777d'};
-// Sombreado suave do relevo: cada canto de quadrado guarda a média da luz das encostas que se encontram nele.
-// Os valores ficam em duas imagens pequenas (escurecer e clarear, 1 pixel por canto) que o desenho estica com
-// interpolação, então a luz muda em degradê contínuo de um quadrado para o outro, sem bordas.
-const SHD={v:-1,dk:null,lt:null};
+const CLIFF={0:'#a39e92',3:'#c9b07a',4:'#c79a5a',5:'#7d5a3a',6:'#9aa3ab',7:'#8e8a83'};
+// Sombreado suave do relevo: cada canto de quadrado guarda a média da luz das superfícies que se encontram nele,
+// em duas versões: a de cima (topo dos platôs) e a de baixo (chão ao pé dos paredões, que ganha sombra de contato).
+// Os valores ficam em imagens pequenas (1 pixel por canto) que o desenho estica com interpolação, em degradê.
+const SHD={v:-1};
 const LCORN=[[0,0],[1,0],[1,1],[0,1]];
-function vertexLight(X,Y){const T4=[[X-1,Y-1,2],[X,Y-1,3],[X-1,Y,1],[X,Y,0]]; let zt=-1e9, sum=0, n=0;
-  for(const [x,y,k] of T4)if(inMap(x,y)){const z=cornerZ(x,y)[k]; if(z>zt)zt=z;}
-  for(const [x,y,k] of T4){if(!inMap(x,y)||cornerZ(x,y)[k]!==zt)continue; const lc=LCORN[k];
-    for(const q of tilePlanes(x,y)){if(q.tri&&!q.tri.some(t=>t[0]===lc[0]&&t[1]===lc[1]))continue; sum+=slopeLight(q.A,q.B); n++;}}
-  return [n?sum/n:1,zt];}
-function shadeMaps(){if(SHD.v===mapVer&&SHD.dk)return SHD; const M=N+1;
-  if(!SHD.dk)for(const k of ['dk','lt','sn']){SHD[k]=document.createElement('canvas'); SHD[k].width=SHD[k].height=M;}
-  const R=new Float32Array(M*M), Z=new Float32Array(M*M);
-  for(let Y=0;Y<M;Y++)for(let X=0;X<M;X++){const [r,z]=vertexLight(X,Y); R[Y*M+X]=r; Z[Y*M+X]=z/HZ;}
-  const im={}; for(const k of ['dk','lt','sn'])im[k]=SHD[k].getContext('2d').createImageData(M,M);
-  for(let Y=0;Y<M;Y++)for(let X=0;X<M;X++){const v=Y*M+X, j=v*4, r=R[v], z=Z[v];
-    // curvatura: pé de encosta (côncavo) escurece um pouco, crista (convexo) clareia
-    let sz=0,n=0; for(const [a,b] of [[1,0],[-1,0],[0,1],[0,-1]]){const XX=X+a,YY=Y+b; if(XX<0||YY<0||XX>=M||YY>=M)continue; sz+=Z[YY*M+XX]; n++;}
-    const cv=n?sz/n-z:0;
-    const d=clamp((1-r)*2.3+Math.max(0,cv)*.2,0,.52), l=clamp((r-1)*2.1+Math.max(0,-cv)*.16,0,.38)+clamp(z,0,4)*.025;
-    const sn=clamp(z-3.2+((hsh(X,Y,41)%100)/100-.5)*.8,0,1)*.88;
-    const A=im.dk.data, B=im.lt.data, C=im.sn.data;
-    A[j]=22; A[j+1]=30; A[j+2]=44; A[j+3]=Math.round(d*255);
-    B[j]=255; B[j+1]=248; B[j+2]=212; B[j+3]=Math.round(l*255);
-    C[j]=238; C[j+1]=244; C[j+2]=250; C[j+3]=Math.round(sn*255);}
-  for(const k of ['dk','lt','sn'])SHD[k].getContext('2d').putImageData(im[k],0,0); SHD.v=mapVer; return SHD;}
-// aplica o sombreado (só onde já tem pintura) no retângulo de cantos [sx,sx+w]×[sy,sy+h], com a transformação atual do plano
-function shadeRect(c,sx,sy,w,h){const m=shadeMaps(), M=N+1, x0=Math.max(0,sx),y0=Math.max(0,sy),x1=Math.min(M,sx+w),y1=Math.min(M,sy+h); if(x1<=x0||y1<=y0)return;
+function vertexLight(X,Y){const T4=[[X-1,Y-1,2],[X,Y-1,3],[X-1,Y,1],[X,Y,0]]; let zt=-1e9, zl=1e9;
+  for(const [x,y,k] of T4)if(inMap(x,y)){const z=cornerZ(x,y)[k]; if(z>zt)zt=z; if(z<zl)zl=z;}
+  const avg=zz=>{let sum=0,n=0; for(const [x,y,k] of T4){if(!inMap(x,y)||cornerZ(x,y)[k]!==zz)continue; const lc=LCORN[k];
+    for(const q of tilePlanes(x,y)){if(q.tri&&!q.tri.some(t=>t[0]===lc[0]&&t[1]===lc[1]))continue; sum+=slopeLight(q.A,q.B); n++;}} return n?sum/n:1;};
+  return [avg(zt),zt,avg(zl),zl];}
+function shadeMaps(){if(SHD.v===mapVer&&SHD.dkT)return SHD; const M=N+1, K=['dkT','ltT','dkL','ltL'];
+  if(!SHD.dkT)for(const k of K){SHD[k]=document.createElement('canvas'); SHD[k].width=SHD[k].height=M;}
+  const im={}; for(const k of K)im[k]=SHD[k].getContext('2d').createImageData(M,M); SHD.zt=new Float32Array(M*M);
+  const put=(D,j,rgb,a)=>{D[j]=rgb[0]; D[j+1]=rgb[1]; D[j+2]=rgb[2]; D[j+3]=Math.round(clamp(a,0,1)*255);};
+  const DK=[22,30,44], LT=[255,248,212];
+  for(let Y=0;Y<M;Y++)for(let X=0;X<M;X++){const v=Y*M+X, j=v*4, [rt,zt,rl,zl]=vertexLight(X,Y), drop=(zt-zl)/HZ; SHD.zt[v]=zt;
+    put(im.dkT.data,j,DK,(1-rt)*2.3); put(im.ltT.data,j,LT,(rt-1)*2.1+clamp(zt/HZ,0,8)*.014+(drop>=1?.07:0));
+    put(im.dkL.data,j,DK,clamp((1-rl)*2.3,0,.52)+(drop>=1?Math.min(.34,.12+drop*.04):0)); put(im.ltL.data,j,LT,(rl-1)*2.1+clamp(zl/HZ,0,8)*.014);}
+  for(const k of K)SHD[k].getContext('2d').putImageData(im[k],0,0); SHD.v=mapVer; return SHD;}
+// aplica o sombreado (só onde já tem pintura) no retângulo de cantos [sx,sx+w]×[sy,sy+h], com a transformação atual do plano.
+// low = superfície de baixo (chão ao pé de paredão ou rampa encaixada)
+function shadeRect(c,sx,sy,w,h,low){const m=shadeMaps(), M=N+1, x0=Math.max(0,sx),y0=Math.max(0,sy),x1=Math.min(M,sx+w),y1=Math.min(M,sy+h); if(x1<=x0||y1<=y0)return;
   c.globalCompositeOperation='source-atop'; c.imageSmoothingEnabled=true; c.imageSmoothingQuality='low';
-  for(const im of [m.sn,m.dk,m.lt])c.drawImage(im,x0,y0,x1-x0,y1-y0,x0-.5,y0-.5,x1-x0,y1-y0);
+  for(const im of low?[m.dkL,m.ltL]:[m.dkT,m.ltT])c.drawImage(im,x0,y0,x1-x0,y1-y0,x0-.5,y0-.5,x1-x0,y1-y0);
   c.globalCompositeOperation='source-over';}
+function tileIsLow(x,y,cz){const m=shadeMaps(), M=N+1; return cz[0]<m.zt[y*M+x]||cz[1]<m.zt[y*M+x+1]||cz[2]<m.zt[(y+1)*M+x+1]||cz[3]<m.zt[(y+1)*M+x];}
 // solo já com a textura de "área não comprada" por cima (uma pintura só, sem emenda entre quadrados)
 const LPAT={};
 function lockPat(tr){if(LPAT[tr])return LPAT[tr]; const cv=document.createElement('canvas'); cv.width=cv.height=64; const c=cv.getContext('2d');
@@ -118,21 +113,68 @@ function lockPat(tr){if(LPAT[tr])return LPAT[tr]; const cv=document.createElemen
   return LPAT[tr]=g.createPattern(cv,'repeat');}
 function cliffFace(c,pts,top,bot){const ys=pts.map(p=>p[1]), y0=Math.min(...ys), y1=Math.max(...ys);
   const gr=c.createLinearGradient(0,y0,0,y1); gr.addColorStop(0,top); gr.addColorStop(1,bot); poly(c,pts,gr);}
+// paredão de rocha: blocos irregulares em fileiras (as fileiras emendam entre quadrados), rachaduras,
+// sombra no pé e a borda de grama pendurada no alto. e0/e1 = cantos da borda no chão; zt/zb = alturas de cima e de baixo.
+const shq=(col,f)=>sh(col,Math.round(f*50)/50);
+function rockFace(c,e0,e1,zt0,zt1,zb0,zb1,lit,grass,n){const A=P(e0[0],e0[1],0), B=P(e1[0],e1[1],0);
+  const pt=(u,z)=>[A[0]+(B[0]-A[0])*u, A[1]+(B[1]-A[1])*u-z], zt=u=>zt0+(zt1-zt0)*u, zb=u=>zb0+(zb1-zb0)*u;
+  const face=[pt(0,zt0),pt(1,zt1),pt(1,zb1),pt(0,zb0)], H=Math.max(zt0-zb0,zt1-zb1), base=lit?'#aaa498':'#7c776e';
+  cliffFace(c,face,nc(shq(base,1.04),n),nc(shq(base,.74),n)); if(H<6)return;
+  const seed=hsh(Math.round(e0[0]*2+e1[0]*3),Math.round(e0[1]*2+e1[1]*3),lit?17:29), r=rng(seed);
+  const jit=(v,k)=>((hsh(Math.round(v[0])*7+k,Math.round(v[1])*13-k,91)%100)/100-.5)*8;
+  c.save(); path(c,face); c.clip();
+  const zmin=Math.min(zb0,zb1), zmax=Math.max(zt0,zt1), RH=13;
+  for(let k=Math.floor(zmin/RH);k*RH<zmax;k++){const lo=u=>k*RH+jit(e0,k)*(1-u)+jit(e1,k)*u, hi=u=>(k+1)*RH+jit(e0,k+1)*(1-u)+jit(e1,k+1)*u;
+    const cuts=[0]; let u=.12+r()*.3; while(u<.9){cuts.push(u); u+=.25+r()*.35;} cuts.push(1);
+    for(let q=0;q+1<cuts.length;q++){const u0=cuts[q],u1=cuts[q+1], f=.84+r()*.3, g0=r()*1.2, g1=r()*1.2;
+      const cell=[pt(u0,lo(u0)+g0),pt(u1,lo(u1)+g1),pt(u1,hi(u1)-g1),pt(u0,hi(u0)-g0)];
+      poly(c,cell,nc(shq(base,f),n));
+      if(r()<.18&&hi(u0)>zt(u0)-RH*2.2)poly(c,cell,'rgba(86,128,58,'+(.18+r()*.2).toFixed(2)+')');   // musgo perto do alto
+      if(r()<.25){const um=u0+(u1-u0)*(.3+r()*.4); line(c,pt(um,hi(um)-1),pt(um+(r()-.5)*.06,lo(um)+1),'rgba(30,26,22,.18)',.8);}
+      line(c,cell[3],cell[2],'rgba(255,250,235,'+(lit?.22:.12)+')',1);   // aresta de cima pega luz
+      line(c,cell[0],cell[1],'rgba(30,26,22,.32)',1.1);                  // junta de baixo
+      line(c,cell[1],cell[2],'rgba(30,26,22,.22)',.9);}}
+  for(let k=0;k<1+(r()<.5);k++){const u=.15+r()*.7; let z=zt(u)-2, uu=u; c.beginPath(); c.moveTo(...pt(uu,z));
+    while(z>zb(uu)+3&&z>zt(u)-H*.8){z-=4+r()*5; uu=clamp(uu+(r()-.5)*.08,0,1); c.lineTo(...pt(uu,z));}
+    c.strokeStyle='rgba(28,24,20,.4)'; c.lineWidth=.9; c.stroke();}
+  const y0=Math.min(face[2][1],face[3][1])-Math.min(H,26), y1=Math.max(face[2][1],face[3][1]);
+  const gr=c.createLinearGradient(0,y0,0,y1); gr.addColorStop(0,'rgba(20,18,15,0)'); gr.addColorStop(1,'rgba(20,18,15,.38)'); poly(c,face,gr);
+  c.restore();
+  if(grass){const pts=[pt(0,zt0+.5),pt(1,zt1+.5)]; for(let k=8;k>=0;k--){const u=k/8; pts.push(pt(u,Math.max(zb(u)+1,zt(u)-(1.5+r()*4.5))));}
+    poly(c,pts,nc(lit?'#6c9e4b':'#56853b',n)); line(c,pt(0,zt0),pt(1,zt1),'rgba(255,255,255,.14)',1);}}
 function drawColumn(c,x,y,n){const i=y*N+x, cz=cornerZ(x,y), tr=G.tr[i];
   const nbz=(X,Y)=>inMap(X,Y)?((G.tr[Y*N+X]===1||G.tr[Y*N+X]===2)?[0,0,0,0]:cornerZ(X,Y)):[-20,-20,-20,-20];
-  const col=CLIFF[tr]||'#8a7356';
-  setW(c); const r=nbz(x+1,y); // face direita
-  if(cz[1]>r[0]||cz[2]>r[3]){cliffFace(c,[P(x+1,y,cz[1]),P(x+1,y+1,cz[2]),P(x+1,y+1,r[3]),P(x+1,y,r[0])],nc(sh(col,.72),n),nc(sh(col,.46),n));
-    line(c,P(x+1,y,cz[1]),P(x+1,y+1,cz[2]),'rgba(255,255,255,.1)',1);
-    for(let z=Math.min(r[0],r[3])+5;z<Math.max(cz[1],cz[2])-2;z+=5){const za=Math.min(z,cz[1]),zb=Math.min(z,cz[2]); if(za>r[0]&&zb>r[3])line(c,P(x+1,y,za),P(x+1,y+1,zb),'rgba(0,0,0,.07)',1);}}
-  const l=nbz(x,y+1); // face esquerda
-  if(cz[3]>l[0]||cz[2]>l[1]){cliffFace(c,[P(x,y+1,cz[3]),P(x+1,y+1,cz[2]),P(x+1,y+1,l[1]),P(x,y+1,l[0])],nc(sh(col,.9),n),nc(sh(col,.64),n));
-    for(let z=Math.min(l[0],l[1])+5;z<Math.max(cz[3],cz[2])-2;z+=5){const za=Math.min(z,cz[3]),zb=Math.min(z,cz[2]); if(za>l[0]&&zb>l[1])line(c,P(x,y+1,za),P(x+1,y+1,zb),'rgba(0,0,0,.06)',1);}}
-  const pl=tilePlanes(x,y), pat=isUl(x,y)?SOIL_PAT(tr):lockPat(tr);
+  const grass=tr===0||tr===5;
+  setW(c); const r=nbz(x+1,y); // face direita (na sombra)
+  if(cz[1]>r[0]||cz[2]>r[3])rockFace(c,[x+1,y],[x+1,y+1],cz[1],cz[2],Math.min(r[0],cz[1]),Math.min(r[3],cz[2]),false,grass,n);
+  const l=nbz(x,y+1); // face esquerda (no sol)
+  if(cz[3]>l[0]||cz[2]>l[1])rockFace(c,[x,y+1],[x+1,y+1],cz[3],cz[2],Math.min(l[0],cz[3]),Math.min(l[1],cz[2]),true,grass,n);
+  const pl=tilePlanes(x,y), pat=isUl(x,y)?SOIL_PAT(tr):lockPat(tr), low=tileIsLow(x,y,cz);
   for(const q of pl){setIsoPlane(c,x,y,q.zc,q.A,q.B); c.save(); c.beginPath();
     if(q.tri){const t=q.tri, mx=(t[0][0]+t[1][0]+t[2][0])/3, my=(t[0][1]+t[1][1]+t[2][1])/3;
       t.forEach((v,k)=>{const px=x+mx+(v[0]-mx)*1.05, py=y+my+(v[1]-my)*1.05; k?c.lineTo(px,py):c.moveTo(px,py);}); c.closePath();}
     else c.rect(x-.02,y-.02,1.04,1.04);
-    c.clip(); patT(pat,32); c.fillStyle=pat; c.fillRect(x-1,y-1,3,3); shadeRect(c,x-1,y-1,4,4); c.restore();}
+    c.clip(); patT(pat,32); c.fillStyle=pat; c.fillRect(x-1,y-1,3,3); shadeRect(c,x-1,y-1,4,4,low); c.restore();}
   setIsoTile(c,x,y); tileTop(c,x,y);
   setW(c);}
+/* ---- Serra do fundo: picos de pedra com neve (enfeite) ---- */
+function drawPeak(c,pk,n){const r=rng(pk.k), [X,Y]=P(pk.x+.5,pk.y+.5,LV_P*HZ), W=pk.w, H=pk.h, sx=X+pk.sx*W, sy=Y-H;
+  // contorno: encosta esquerda e direita com quebras irregulares
+  const side=(x0,y0,x1,y1,k)=>{const out=[]; for(let i=1;i<k;i++){const t=i/k; out.push([x0+(x1-x0)*t+(r()-.5)*W*.06, y0+(y1-y0)*t+(r()-.5)*H*.05]);} return out;};
+  const L=[X-W/2,Y+8], R=[X+W/2,Y+8], S=[sx,sy];
+  const left=side(L[0],L[1],S[0],S[1],6), right=side(S[0],S[1],R[0],R[1],6);
+  const outline=[L,...left,S,...right,R];
+  const foot=[sx+W*(.08+r()*.1),Y+8], ridge=[S,...side(S[0],S[1],foot[0],foot[1],5),foot];
+  setW(c); poly(c,outline,nc('#706c66',n));
+  c.save(); path(c,outline); c.clip();
+  poly(c,[L,...left,...ridge],nc('#aaa59c',n));                         // lado no sol
+  for(let k=0;k<7;k++){const a=r(), t=.25+r()*.6, bx=L[0]+(R[0]-L[0])*a, by=sy+H*t;   // facetas
+    poly(c,[[bx,by],[bx+W*(.05+r()*.08),by+H*(.18+r()*.2)],[bx-W*(.03+r()*.06),by+H*(.22+r()*.2)]],nc(a<.45?'#bab5ac':'#615d58',n));}
+  const snowY=sy+H*(.34+r()*.1), zig=[]; for(let k=0;k<=10;k++){const t=k/10; zig.push([L[0]+(R[0]-L[0])*t, snowY+(k%2?H*.07:-H*.02)+r()*H*.06-(Math.abs(t-.5+pk.sx*.5))*H*.12]);}
+  const snow=[[L[0],sy-10],[R[0],sy-10],...zig.reverse()];
+  poly(c,snow,nc('#c7d1de',n));                                         // neve na sombra
+  c.save(); path(c,[L,...left,...ridge]); c.clip(); poly(c,snow,nc('#f5f8fc',n)); c.restore();
+  const gr=c.createLinearGradient(0,Y-H*.35,0,Y+8); gr.addColorStop(0,'rgba(40,50,45,0)'); gr.addColorStop(1,nc('#3f5a3a',n)); poly(c,outline,gr); // base esverdeada
+  c.restore();
+  c.strokeStyle='rgba(30,28,26,.35)'; c.lineWidth=1; c.beginPath(); c.moveTo(...ridge[0]); for(const p of ridge)c.lineTo(...p); c.stroke();}
+const peakBox=pk=>{const [X,Y]=P(pk.x+.5,pk.y+.5,LV_P*HZ); return [X-pk.w*.6-4,Y-pk.h-16,X+pk.w*.6+4,Y+12];};

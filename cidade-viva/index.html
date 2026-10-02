@@ -724,17 +724,32 @@ function riverY(xx){return 26.8+2.6*Math.sin((xx-6)*0.13)+0.7*Math.sin(xx*0.41+0
 function vnoise(seed){const h=(x,y)=>(hsh(x+seed*7,y-seed*3,seed+11)%10007)/10007;
   return (x,y)=>{const xi=Math.floor(x),yi=Math.floor(y),fx=x-xi,fy=y-yi,sx=fx*fx*(3-2*fx),sy=fy*fy*(3-2*fy);
     const a=h(xi,yi),b=h(xi+1,yi),c=h(xi,yi+1),d=h(xi+1,yi+1); return a+(b-a)*sx+(c-a)*sy+(a-b-c+d)*sx*sy;};}
-function mountainF(x,y,nz){const xx=x+.5,yy=y+.5; const w=(nz[0](xx*.11,yy*.11)-.5)*6;
-  let m=clamp((15.5+w-xx)/8,0,1)*clamp((24.5+w-yy)/5,0,1);
-  m=Math.max(m,clamp((8.5+w*.7-yy)/5.5,0,1)*clamp((37+w-xx)/8,0,1)*.92);
-  const f=nz[1](xx*.16,yy*.16)*.62+nz[2](xx*.34,yy*.34)*.28+nz[3](xx*.7,yy*.7)*.1;
-  const r=Math.abs(nz[3](xx*.22+3,yy*.22)-.5)*2; return m<=0?0:m*(.9+f*3.4+(1-r)*1.3)+(f-.5)*.6*m;}
 const inStart=(x,y)=>x>=16&&x<32&&y>=16&&y<32;
 const nearPortal=(x,y)=>x>=14&&x<=16&&y>=16&&y<=18;
-// relevo pelas alturas dos cantos (vértices): vizinhos diferem no máximo 1 nível, então cada quadrado vira
-// plano, rampa, canto externo ou canto interno e as encostas emendam sem degraus. pin(X,Y) fixa a altura de um vértice (-1 = livre).
-function genTerrain(seed,pin){const tr=new Uint8Array(N*N), ht=new Uint8Array(N*N), rp=new Uint8Array(N*N);
-  const nz=[0,1,2,3].map(k=>vnoise(seed+k*101));
+/* Relevo em platôs (estilo serra): chão no nível 0, platô baixo A (nível 3) colado na cidade, platô alto B (nível 6)
+   atrás dele e a serra de picos no fundo do mapa (só enfeite, não dá para construir). As bordas são paredões de rocha.
+   As ruas já vêm prontas: A sobe por uma rampa colada no paredão sul; B por uma estrada na encosta leste. */
+const LV_A=3, LV_B=6, LV_P=7;
+function peakZone(x,y){return (y<=2&&x<=28)||(x<=2&&y<=23)||(x+y<=10);}
+function plateauShape(seed){const nz=vnoise(seed+303), n=(t,k)=>Math.round((nz(t*.33,k*7.3)-.5)*3.2);
+  const bS=x=>x>=10&&x<=22?9:clamp(9+n(x,1),8,10);          // última linha do platô B (sul)
+  const bE=y=>clamp(21+n(y,2),20,21);                       // última coluna de B (leste); a estrada fica em x=22
+  const aE=y=>y>=13?15:clamp(14+n(y,3),13,15);              // última coluna de A (leste): paredão do túnel em x=15
+  const aS=x=>x>=12?21:clamp(21+n(x,4),20,22);              // última linha de A (sul): a rampa corre na borda
+  const inB=(x,y)=>!peakZone(x,y)&&x>=3&&y>=3&&x<=bE(y)&&y<=bS(x);
+  const inA=(x,y)=>!peakZone(x,y)&&!inB(x,y)&&x>=3&&x<=aE(y)&&y>bS(x)&&y<=aS(x);
+  return {inA,inB,bS};}
+// ruas prontas: [x,y,nível,rampa]
+function presetRoads(){const out=[], add=(x,y,h,r)=>out.push([x,y,h,r||0]);
+  // A: rampa subindo para oeste na borda sul (sai da rua principal em x=16), depois rua norte-sul em x=12
+  add(15,21,0,3); add(14,21,1,3); add(13,21,2,3); for(let y=10;y<=21;y++)add(12,y,LV_A);
+  // B: rua no chão saindo da coluna x=27, estrada subindo para o norte colada no paredão leste e rua no alto
+  for(let x=23;x<=27;x++)add(x,15,0); for(let y=10;y<=15;y++)add(22,y,0);
+  for(let k=0;k<6;k++)add(22,9-k,k,4);
+  for(let x=12;x<=22;x++)add(x,3,LV_B); for(let y=4;y<=9;y++)add(12,y,LV_B);
+  return out;}
+function genTerrain(seed){const tr=new Uint8Array(N*N), ht=new Uint8Array(N*N), rp=new Uint8Array(N*N), rd=new Uint8Array(N*N);
+  const sh=plateauShape(seed);
   for(let y=0;y<N;y++)for(let x=0;x<N;x++){const i=y*N+x;
     const coast=53.5+1.6*Math.sin(y*0.21+0.7)+1.1*Math.sin(y*0.071+2.1); let v=0;
     if(x+.5>coast)v=2; else if(x+.5>coast-2.3)v=3;
@@ -742,51 +757,18 @@ function genTerrain(seed,pin){const tr=new Uint8Array(N*N), ht=new Uint8Array(N*
     const xx=x+.5, hw=1.25+(xx>40?Math.min(.7,(xx-40)*.05):0);
     if(Math.abs(y+.5-riverY(xx))<hw&&v!==2)v=1;
     const lx=(x+.5-42)/4.6, ly=(y+.5-11)/3.4; if(lx*lx+ly*ly<1+.12*Math.sin(x*1.3+y*.7))v=1;
-    tr[i]=v;}
-  const M=N+1, V=new Int8Array(M*M), PN=new Int8Array(M*M).fill(-1);
-  for(let Y=0;Y<M;Y++)for(let X=0;X<M;X++){const j=Y*M+X; let h=0, wet=false, st=false;
-    for(const [a,b] of [[-1,-1],[0,-1],[-1,0],[0,0]]){const x=X+a,y=Y+b; if(!inMap(x,y))continue; const t=tr[y*N+x];
-      if(t===1||t===2||t===3)wet=true; if(inStart(x,y))st=true;
-      if(t===0)h=Math.max(h,Math.floor(mountainF(X-.5,Y-.5,nz)));
-      if(t===4&&X>2&&Y<N-2){const d=nz[2]((X-.5)*.3,(Y-.5)*.3); h=Math.max(h,d>.8?2:d>.62?1:0);}}
-    // morro do túnel, perto do centro (o portal fica na encosta, de frente para o trilho)
-    if(X>=10&&X<=15&&Y>=14&&Y<=21){const dy=Math.abs(Y-17.5); h=Math.max(h,dy<=2?(X>=14?2:3):dy<=3?(X>=14?1:2):(X>=13?0:1));}
-    V[j]=clamp(h,0,4);
-    const p=pin?pin(X,Y):-1;
-    if(p>=0)PN[j]=p; else if(wet||st)PN[j]=0; else if(X>=14&&X<=15&&Y>=16&&Y<=19)PN[j]=2;
-    if(PN[j]>=0)V[j]=PN[j];}
-  const NB=[[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,-1],[1,-1],[-1,1]];
-  const lip=()=>{for(let it=0;it<60;it++){let ch=false;
-      for(const dir of [1,-1])for(let k=0;k<M*M;k++){const j=dir>0?k:M*M-1-k; if(PN[j]>=0)continue; const X=j%M,Y=(j/M)|0; let lo=99;
-        for(const [a,b] of NB){const XX=X+a,YY=Y+b; if(XX<0||YY<0||XX>=M||YY>=M)continue; lo=Math.min(lo,V[YY*M+XX]);} if(V[j]>lo+1){V[j]=lo+1; ch=true;}}
-      for(let j=0;j<M*M;j++){if(PN[j]>=0)continue; const X=j%M,Y=(j/M)|0; let hi=0;
-        for(const [a,b] of NB){const XX=X+a,YY=Y+b; if(XX<0||YY<0||XX>=M||YY>=M)continue; hi=Math.max(hi,V[YY*M+XX]);} if(V[j]<hi-1){V[j]=hi-1; ch=true;}}
-      if(!ch)break;}};
-  const cs=(x,y)=>{const a=y*M+x; return [a,a+1,a+M+1,a+M];};
-  lip();
-  // sela (dois cantos opostos altos): abaixa um deles; repete até sumir
-  for(let it=0;it<12;it++){let n=0;
-    for(let y=0;y<N;y++)for(let x=0;x<N;x++){const c=cs(x,y), z=c.map(j=>V[j]); if(z[0]!==z[2]||z[1]!==z[3]||z[0]===z[1])continue;
-      const hiK=z[0]>z[1]?[0,2]:[1,3], loK=z[0]>z[1]?[1,3]:[0,2]; let done=false;
-      for(const k of hiK)if(PN[c[k]]<0){V[c[k]]--; done=true; break;}
-      if(!done)for(const k of loK)if(PN[c[k]]<0){V[c[k]]++; done=true; break;}
-      if(done)n++;}
-    if(!n)break; lip();}
-  for(let y=0;y<N;y++)for(let x=0;x<N;x++){const i=y*N+x, z=cs(x,y).map(j=>V[j]);
-    if(tr[i]===1||tr[i]===2){ht[i]=0; continue;}
-    const s=shapeOf(z); if(s){ht[i]=s[0]; rp[i]=s[1];} else ht[i]=Math.max(...z)-Math.min(...z)>1?Math.max(...z):Math.min(...z); // sem forma: só perto do paredão do túnel
-}
-  // neve e rocha não viram quadrados: a neve dos picos entra em degradê no sombreado (shadeMaps)
-  // boca do túnel: platô no nível 2 com paredão virado para o trilho
-  for(let y=16;y<=18;y++)for(let x=14;x<=15;x++){const i=y*N+x; if(tr[i]===1||tr[i]===2)continue; ht[i]=2; rp[i]=0;}
-  return {tr,ht,rp};}
-// forma do quadrado a partir das alturas dos 4 cantos (em níveis): [nível, rampa] ou null se não tiver forma
-function shapeOf(z){const lo=Math.min(...z), hi=Math.max(...z); if(hi===lo)return [lo,0]; if(hi-lo>1)return null;
-  const up=z.map(v=>v>lo?1:0), n=up[0]+up[1]+up[2]+up[3];
-  if(n===1)return [lo,5+up.indexOf(1)];
-  if(n===3)return [lo,9+up.indexOf(0)];
-  if(up[1]&&up[2])return [lo,1]; if(up[2]&&up[3])return [lo,2]; if(up[0]&&up[3])return [lo,3]; if(up[0]&&up[1])return [lo,4];
-  return null;}
+    let h=0; if(v===0){if(peakZone(x,y)){h=LV_P; v=7;} else if(sh.inB(x,y))h=LV_B; else if(sh.inA(x,y))h=LV_A;}
+    tr[i]=v; ht[i]=h;}
+  for(const [x,y,h,r] of presetRoads()){const i=y*N+x; if(tr[i]===1||tr[i]===2)continue; ht[i]=h; rp[i]=r; rd[i]=1;}
+  return {tr,ht,rp,rd};}
+// picos da serra (enfeite desenhado por cima da faixa de rocha do fundo)
+let PEAK_C=null;
+function peaks(){const seed=S?S.seed||1:1; if(PEAK_C&&PEAK_C.seed===seed)return PEAK_C.list; const r=rng(seed+77), list=[];
+  const add=(x,y,big)=>list.push({x,y,w:(big?220:160)+r()*80,h:(big?210:150)+r()*90,sx:(r()-.5)*.3,k:Math.floor(r()*1e6)});
+  for(let x=3;x<=27;x+=4+Math.floor(r()*2))add(x,1,r()<.5);
+  for(let y=5;y<=22;y+=4+Math.floor(r()*2))add(1,y,r()<.5);
+  add(4,4,true);
+  PEAK_C={seed,list}; return list;}
 // alturas dos 4 cantos em níveis a partir de ht/rp
 function cornerL(h,r){if(!r)return [h,h,h,h];
   if(r<5){const d=r-1; return d===0?[h,h+1,h+1,h]:d===1?[h,h,h+1,h+1]:d===2?[h+1,h,h,h+1]:[h+1,h+1,h,h];}
@@ -795,6 +777,7 @@ const DIRS4=[[1,0],[0,1],[-1,0],[0,-1]];
 function genObstacles(tr,ht,seed){const ob=new Uint8Array(N*N), r=rng(seed);
   const nz=(x,y)=>Math.sin(x*.21+seed%7)*Math.cos(y*.17+1.3)+Math.sin((x+y)*.09+2)*.6;
   for(let y=0;y<N;y++)for(let x=0;x<N;x++){const i=y*N+x; const v=tr[i]; if(v!==0&&v!==4&&v!==6&&v!==7)continue; if(nearPortal(x,y))continue;
+    if(peakZone(x,y)){if(v===7&&r()<.07)ob[i]=2; continue;}
     const ch=Math.floor(x/CH)+Math.floor(y/CH)*NC, start=START_CH.some(([a,b])=>a+b*NC===ch);
     if(v===4){if(r()<.09)ob[i]=r()<.75?5:3; continue;}
     const mt=ht[i]>0, forest=nz(x,y)>.55||mt, u0=r();
@@ -814,7 +797,7 @@ function newGame(keep){
     col:{}, ord:[], ordT:[0,0,0], ch:null, title:0, taxT:now, evSeen:''};
   fillNewState(s,now);
   START_CH.forEach(([cx,cy])=>s.ul[cy*NC+cx]=1);
-  G=emptyGrids(); const tg=genTerrain(seed); G.tr=tg.tr; G.ht=tg.ht; G.rp=tg.rp; G.ob=genObstacles(G.tr,G.ht,seed);
+  G=emptyGrids(); const tg=genTerrain(seed); G.tr=tg.tr; G.ht=tg.ht; G.rp=tg.rp; G.ob=genObstacles(G.tr,G.ht,seed); for(let i=0;i<N*N;i++)if(tg.rd[i]){G.rd[i]=1; G.ob[i]=0;}
   G.rl[TUN.y*N+TUN.x]=1; G.rl[TUN.y*N+TUN.x+1]=1;
   const add=(k,x,y,extra)=>{const t=T[k]; s.b.push(Object.assign({i:s.nid++,k,x,y,f:0,lv:1,d:now,a:0,s:0},extra||{}));
     for(let dy=0;dy<t.h;dy++)for(let dx=0;dx<t.w;dx++)G.ob[(y+dy)*N+x+dx]=0;};
@@ -860,14 +843,13 @@ function fillNewState(s,now){if(!s.name)s.name='Cidade Viva'; if(!s.laws)s.laws=
   for(const k of ['fire','fireOut','harvestT','research','reqs','law','chainStep'])if(s.st&&s.st[k]==null)s.st[k]=0;}
 // relevo novo nas áreas não compradas. O que o jogador já tem (áreas compradas, água, ruas, trilhos) fica igual
 // e as alturas dos cantos dele viram pontos fixos, para o relevo novo encostar sem degrau.
-const TERR_VER=2;
+const TERR_VER=3;
 function refreshTerrain(s,g){const seed=s.seed||1, owned=(x,y)=>!!(s.ul||[])[Math.floor(y/CH)*NC+Math.floor(x/CH)];
-  const keep=new Uint8Array(N*N); for(let i=0;i<N*N;i++){const x=i%N,y=(i/N)|0; keep[i]=owned(x,y)||g.tr[i]===1||g.tr[i]===2||g.rd[i]||g.rl[i]?1:0;}
-  const pin=(X,Y)=>{let v=-1; for(const [a,b,k] of [[-1,-1,2],[0,-1,3],[-1,0,1],[0,0,0]]){const x=X+a,y=Y+b; if(!inMap(x,y))continue; const i=y*N+x; if(!keep[i])continue;
-    v=Math.max(v,(g.tr[i]===1||g.tr[i]===2)?0:cornerL(g.ht[i],g.rp[i])[k]);} return v;};
-  const tg=genTerrain(seed,pin), ob=genObstacles(tg.tr,tg.ht,seed);
-  for(let i=0;i<N*N;i++){if(keep[i]||tg.tr[i]===1||tg.tr[i]===2)continue; const o=g.tr[i];
-    g.ht[i]=tg.ht[i]; g.rp[i]=tg.rp[i]; if(o===0||o===6||o===5||o===4||o===7)g.tr[i]=tg.tr[i]===3?o:tg.tr[i]; g.ob[i]=ob[i];}
+  const tg=genTerrain(seed), ob=genObstacles(tg.tr,tg.ht,seed);
+  for(let i=0;i<N*N;i++){const x=i%N,y=(i/N)|0, o=g.tr[i];
+    if(owned(x,y)||o===1||o===2||g.rd[i]||g.rl[i]||tg.tr[i]===1||tg.tr[i]===2)continue;
+    g.ht[i]=tg.ht[i]; g.rp[i]=tg.rp[i]; if(o===0||o===6||o===5||o===4||o===7)g.tr[i]=tg.tr[i]===3?o:tg.tr[i];
+    g.ob[i]=tg.rd[i]?0:ob[i]; if(tg.rd[i])g.rd[i]=1;}
   s.terr=TERR_VER;}
 // save v3 → v4: relevo novo nas áreas não compradas e túnel novo perto do centro
 function migrateV4(s,g){const owned=(x,y)=>!!(s.ul||[])[Math.floor(y/CH)*NC+Math.floor(x/CH)];
@@ -943,7 +925,7 @@ const popc=m=>{let c=0;while(m){c+=m&1;m>>=1;}return c;};
 function dist(a,b){const aw=fw(a),ah=fh(a),bw=fw(b),bh=fh(b);
   const dx=Math.max(0,b.x-(a.x+aw-1),a.x-(b.x+bw-1)), dy=Math.max(0,b.y-(a.y+ah-1),a.y-(b.y+bh-1)); return Math.max(dx,dy);}
 function stationLinked(b){const w=fw(b),h=fh(b); for(let i=-1;i<=w;i++)for(let j=-1;j<=h;j++){if(i>=0&&i<w&&j>=0&&j<h)continue; const X=b.x+i,Y=b.y+j; if(inMap(X,Y)&&D.rail[Y*N+X])return [X,Y];} return null;}
-function freeTile(x,y,ignore,water){if(!isUl(x,y))return false; const i=y*N+x; if(!water&&(G.tr[i]===1||G.tr[i]===2))return false; if(G.rd[i]||G.rl[i]||G.ob[i]||qHas(x,y))return false;
+function freeTile(x,y,ignore,water){if(!isUl(x,y)||peakZone(x,y))return false; const i=y*N+x; if(!water&&(G.tr[i]===1||G.tr[i]===2))return false; if(G.rd[i]||G.rl[i]||G.ob[i]||qHas(x,y))return false;
   const o=D.occ[i]; return o===-1||o===ignore;}
 function canPlace(k,x,y,f,ignore){const t=T[k],w=f?t.h:t.w,h=f?t.w:t.h; let L=null, wat=0, land=0; if(placeRule(t,x,y,w,h))return false;
   for(let dy=0;dy<h;dy++)for(let dx=0;dx<w;dx++){const X=x+dx,Y=y+dy; if(!inMap(X,Y))return false; const i=Y*N+X, isW=G.tr[i]===1||G.tr[i]===2;
@@ -954,6 +936,7 @@ function canPlace(k,x,y,f,ignore){const t=T[k],w=f?t.h:t.w,h=f?t.w:t.h; let L=nu
   if(t.port&&L!==0)return false;
   return true;}
 function whyNot(k,x,y,f){const t=T[k],w=f?t.h:t.w,h=f?t.w:t.h; let lv=null; const pr=placeRule(t,x,y,w,h); if(pr)return pr;
+  for(let dy=0;dy<h;dy++)for(let dx=0;dx<w;dx++)if(peakZone(x+dx,y+dy))return 'A serra é só paisagem';
   for(let dy=0;dy<h;dy++)for(let dx=0;dx<w;dx++){const X=x+dx,Y=y+dy; if(!isUl(X,Y))return 'Área não comprada'; const i=Y*N+X;
     if(G.ob[i])return 'Limpe os obstáculos'; if(G.rp[i])return 'Não dá pra construir em rampa'; if(lv==null)lv=G.ht[i]; else if(lv!==G.ht[i]&&!(G.tr[i]===1))return 'O chão precisa estar nivelado';}
   if(t.port)return 'O porto precisa da metade direita sobre a água';
@@ -1126,11 +1109,11 @@ const tileBusy=(x,y)=>D.occ[y*N+x]!==-1;
 function toolCost(tool,opt){if(tool==='ponte'){const m=BRIDGES[opt||0]; return {c:m.c,mat:m.mat};} return {c:TOOLS[tool].cost,mat:null};}
 function toolCheck(tool,x,y,opt){const tl=TOOLS[tool];
   if(tl.q){const qx=x,qy=y; if(qx<0||qy<0||qx>=Q2||qy>=Q2)return 'fora'; x=qx>>1; y=qy>>1;
-    if(!isUl(x,y))return 'Área não comprada'; const i=y*N+x, qi=qy*Q2+qx;
+    if(!isUl(x,y))return 'Área não comprada'; if(peakZone(x,y))return 'A serra é só paisagem'; const i=y*N+x, qi=qy*Q2+qx;
     if(tool==='apagar')return (G.pv[qi]||G.fc[qi])?'':'já';
     if(G.tr[i]===1||G.tr[i]===2)return 'Não dá na água'; if(tileBusy(x,y))return 'Ocupado'; if(G.rd[i]||G.rl[i])return 'Tem rua ou trilho aqui'; if(G.ob[i])return 'Limpe o obstáculo primeiro'; if(G.rp[i])return 'Não dá em rampa';
     if(tool==='piso'&&G.pv[qi]===(opt||0)+1)return 'já'; if(tool==='muro'&&G.fc[qi]===(opt||0)+1)return 'já'; return '';}
-  if(!inMap(x,y))return 'fora'; if(!isUl(x,y))return 'Área não comprada';
+  if(!inMap(x,y))return 'fora'; if(!isUl(x,y))return 'Área não comprada'; if(peakZone(x,y))return 'A serra é só paisagem';
   const i=y*N+x, tr=G.tr[i], rd=G.rd[i], busy=tileBusy(x,y), wat=tr===1||tr===2;
   switch(tool){
     case 'rua': if(wat)return 'Na água use a Ponte'; if(busy)return 'Ocupado'; if(G.ob[i])return 'Limpe o obstáculo primeiro'; if(rd===1)return 'já'; return '';
@@ -2229,7 +2212,7 @@ function tileTop(c,x,y){const i=y*N+x; if(G.pv[(y*2)*Q2+x*2]||G.pv[(y*2)*Q2+x*2+
 /* ================= Chão ================= */
 function visRange(){const pts=[s2w(0,0),s2w(VW,0),s2w(0,VH),s2w(VW,VH)].map(p=>w2g(p[0],p[1]+40));
   let x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity; for(const [x,y] of pts){x0=Math.min(x0,x);y0=Math.min(y0,y);x1=Math.max(x1,x);y1=Math.max(y1,y);}
-  return [clamp(Math.floor(x0)-2,0,N-1),clamp(Math.floor(y0)-2,0,N-1),clamp(Math.ceil(x1)+8,0,N-1),clamp(Math.ceil(y1)+8,0,N-1)];}
+  return [clamp(Math.floor(x0)-2,0,N-1),clamp(Math.floor(y0)-2,0,N-1),clamp(Math.ceil(x1)+13,0,N-1),clamp(Math.ceil(y1)+13,0,N-1)];}
 let mapVer=1, geoVer=1;
 const elev=i=>G.ht[i]>0||G.rp[i]>0;
 
@@ -2274,38 +2257,33 @@ function dPlotAt(c,w,h,cr,p,ready){const i=.06; const Pz=(a,bb)=>P(a,bb,0); poly
 const LUZ=(()=>{const v=[-1,-.45,1.35],l=Math.hypot(...v); return v.map(a=>a/l);})();
 function slopeLight(A,B){const nx=-A/38,ny=-B/38, l=Math.hypot(nx,ny,1); return ((nx*LUZ[0]+ny*LUZ[1]+LUZ[2])/l)/LUZ[2];}
 /* ---- Colunas de relevo (paredes e topo de cada quadrado elevado) ---- */
-const CLIFF={0:'#8a7356',3:'#c9b07a',4:'#c79a5a',5:'#7d5a3a',6:'#9aa3ab',7:'#74777d'};
-// Sombreado suave do relevo: cada canto de quadrado guarda a média da luz das encostas que se encontram nele.
-// Os valores ficam em duas imagens pequenas (escurecer e clarear, 1 pixel por canto) que o desenho estica com
-// interpolação, então a luz muda em degradê contínuo de um quadrado para o outro, sem bordas.
-const SHD={v:-1,dk:null,lt:null};
+const CLIFF={0:'#a39e92',3:'#c9b07a',4:'#c79a5a',5:'#7d5a3a',6:'#9aa3ab',7:'#8e8a83'};
+// Sombreado suave do relevo: cada canto de quadrado guarda a média da luz das superfícies que se encontram nele,
+// em duas versões: a de cima (topo dos platôs) e a de baixo (chão ao pé dos paredões, que ganha sombra de contato).
+// Os valores ficam em imagens pequenas (1 pixel por canto) que o desenho estica com interpolação, em degradê.
+const SHD={v:-1};
 const LCORN=[[0,0],[1,0],[1,1],[0,1]];
-function vertexLight(X,Y){const T4=[[X-1,Y-1,2],[X,Y-1,3],[X-1,Y,1],[X,Y,0]]; let zt=-1e9, sum=0, n=0;
-  for(const [x,y,k] of T4)if(inMap(x,y)){const z=cornerZ(x,y)[k]; if(z>zt)zt=z;}
-  for(const [x,y,k] of T4){if(!inMap(x,y)||cornerZ(x,y)[k]!==zt)continue; const lc=LCORN[k];
-    for(const q of tilePlanes(x,y)){if(q.tri&&!q.tri.some(t=>t[0]===lc[0]&&t[1]===lc[1]))continue; sum+=slopeLight(q.A,q.B); n++;}}
-  return [n?sum/n:1,zt];}
-function shadeMaps(){if(SHD.v===mapVer&&SHD.dk)return SHD; const M=N+1;
-  if(!SHD.dk)for(const k of ['dk','lt','sn']){SHD[k]=document.createElement('canvas'); SHD[k].width=SHD[k].height=M;}
-  const R=new Float32Array(M*M), Z=new Float32Array(M*M);
-  for(let Y=0;Y<M;Y++)for(let X=0;X<M;X++){const [r,z]=vertexLight(X,Y); R[Y*M+X]=r; Z[Y*M+X]=z/HZ;}
-  const im={}; for(const k of ['dk','lt','sn'])im[k]=SHD[k].getContext('2d').createImageData(M,M);
-  for(let Y=0;Y<M;Y++)for(let X=0;X<M;X++){const v=Y*M+X, j=v*4, r=R[v], z=Z[v];
-    // curvatura: pé de encosta (côncavo) escurece um pouco, crista (convexo) clareia
-    let sz=0,n=0; for(const [a,b] of [[1,0],[-1,0],[0,1],[0,-1]]){const XX=X+a,YY=Y+b; if(XX<0||YY<0||XX>=M||YY>=M)continue; sz+=Z[YY*M+XX]; n++;}
-    const cv=n?sz/n-z:0;
-    const d=clamp((1-r)*2.3+Math.max(0,cv)*.2,0,.52), l=clamp((r-1)*2.1+Math.max(0,-cv)*.16,0,.38)+clamp(z,0,4)*.025;
-    const sn=clamp(z-3.2+((hsh(X,Y,41)%100)/100-.5)*.8,0,1)*.88;
-    const A=im.dk.data, B=im.lt.data, C=im.sn.data;
-    A[j]=22; A[j+1]=30; A[j+2]=44; A[j+3]=Math.round(d*255);
-    B[j]=255; B[j+1]=248; B[j+2]=212; B[j+3]=Math.round(l*255);
-    C[j]=238; C[j+1]=244; C[j+2]=250; C[j+3]=Math.round(sn*255);}
-  for(const k of ['dk','lt','sn'])SHD[k].getContext('2d').putImageData(im[k],0,0); SHD.v=mapVer; return SHD;}
-// aplica o sombreado (só onde já tem pintura) no retângulo de cantos [sx,sx+w]×[sy,sy+h], com a transformação atual do plano
-function shadeRect(c,sx,sy,w,h){const m=shadeMaps(), M=N+1, x0=Math.max(0,sx),y0=Math.max(0,sy),x1=Math.min(M,sx+w),y1=Math.min(M,sy+h); if(x1<=x0||y1<=y0)return;
+function vertexLight(X,Y){const T4=[[X-1,Y-1,2],[X,Y-1,3],[X-1,Y,1],[X,Y,0]]; let zt=-1e9, zl=1e9;
+  for(const [x,y,k] of T4)if(inMap(x,y)){const z=cornerZ(x,y)[k]; if(z>zt)zt=z; if(z<zl)zl=z;}
+  const avg=zz=>{let sum=0,n=0; for(const [x,y,k] of T4){if(!inMap(x,y)||cornerZ(x,y)[k]!==zz)continue; const lc=LCORN[k];
+    for(const q of tilePlanes(x,y)){if(q.tri&&!q.tri.some(t=>t[0]===lc[0]&&t[1]===lc[1]))continue; sum+=slopeLight(q.A,q.B); n++;}} return n?sum/n:1;};
+  return [avg(zt),zt,avg(zl),zl];}
+function shadeMaps(){if(SHD.v===mapVer&&SHD.dkT)return SHD; const M=N+1, K=['dkT','ltT','dkL','ltL'];
+  if(!SHD.dkT)for(const k of K){SHD[k]=document.createElement('canvas'); SHD[k].width=SHD[k].height=M;}
+  const im={}; for(const k of K)im[k]=SHD[k].getContext('2d').createImageData(M,M); SHD.zt=new Float32Array(M*M);
+  const put=(D,j,rgb,a)=>{D[j]=rgb[0]; D[j+1]=rgb[1]; D[j+2]=rgb[2]; D[j+3]=Math.round(clamp(a,0,1)*255);};
+  const DK=[22,30,44], LT=[255,248,212];
+  for(let Y=0;Y<M;Y++)for(let X=0;X<M;X++){const v=Y*M+X, j=v*4, [rt,zt,rl,zl]=vertexLight(X,Y), drop=(zt-zl)/HZ; SHD.zt[v]=zt;
+    put(im.dkT.data,j,DK,(1-rt)*2.3); put(im.ltT.data,j,LT,(rt-1)*2.1+clamp(zt/HZ,0,8)*.014+(drop>=1?.07:0));
+    put(im.dkL.data,j,DK,clamp((1-rl)*2.3,0,.52)+(drop>=1?Math.min(.34,.12+drop*.04):0)); put(im.ltL.data,j,LT,(rl-1)*2.1+clamp(zl/HZ,0,8)*.014);}
+  for(const k of K)SHD[k].getContext('2d').putImageData(im[k],0,0); SHD.v=mapVer; return SHD;}
+// aplica o sombreado (só onde já tem pintura) no retângulo de cantos [sx,sx+w]×[sy,sy+h], com a transformação atual do plano.
+// low = superfície de baixo (chão ao pé de paredão ou rampa encaixada)
+function shadeRect(c,sx,sy,w,h,low){const m=shadeMaps(), M=N+1, x0=Math.max(0,sx),y0=Math.max(0,sy),x1=Math.min(M,sx+w),y1=Math.min(M,sy+h); if(x1<=x0||y1<=y0)return;
   c.globalCompositeOperation='source-atop'; c.imageSmoothingEnabled=true; c.imageSmoothingQuality='low';
-  for(const im of [m.sn,m.dk,m.lt])c.drawImage(im,x0,y0,x1-x0,y1-y0,x0-.5,y0-.5,x1-x0,y1-y0);
+  for(const im of low?[m.dkL,m.ltL]:[m.dkT,m.ltT])c.drawImage(im,x0,y0,x1-x0,y1-y0,x0-.5,y0-.5,x1-x0,y1-y0);
   c.globalCompositeOperation='source-over';}
+function tileIsLow(x,y,cz){const m=shadeMaps(), M=N+1; return cz[0]<m.zt[y*M+x]||cz[1]<m.zt[y*M+x+1]||cz[2]<m.zt[(y+1)*M+x+1]||cz[3]<m.zt[(y+1)*M+x];}
 // solo já com a textura de "área não comprada" por cima (uma pintura só, sem emenda entre quadrados)
 const LPAT={};
 function lockPat(tr){if(LPAT[tr])return LPAT[tr]; const cv=document.createElement('canvas'); cv.width=cv.height=64; const c=cv.getContext('2d');
@@ -2314,24 +2292,71 @@ function lockPat(tr){if(LPAT[tr])return LPAT[tr]; const cv=document.createElemen
   return LPAT[tr]=g.createPattern(cv,'repeat');}
 function cliffFace(c,pts,top,bot){const ys=pts.map(p=>p[1]), y0=Math.min(...ys), y1=Math.max(...ys);
   const gr=c.createLinearGradient(0,y0,0,y1); gr.addColorStop(0,top); gr.addColorStop(1,bot); poly(c,pts,gr);}
+// paredão de rocha: blocos irregulares em fileiras (as fileiras emendam entre quadrados), rachaduras,
+// sombra no pé e a borda de grama pendurada no alto. e0/e1 = cantos da borda no chão; zt/zb = alturas de cima e de baixo.
+const shq=(col,f)=>sh(col,Math.round(f*50)/50);
+function rockFace(c,e0,e1,zt0,zt1,zb0,zb1,lit,grass,n){const A=P(e0[0],e0[1],0), B=P(e1[0],e1[1],0);
+  const pt=(u,z)=>[A[0]+(B[0]-A[0])*u, A[1]+(B[1]-A[1])*u-z], zt=u=>zt0+(zt1-zt0)*u, zb=u=>zb0+(zb1-zb0)*u;
+  const face=[pt(0,zt0),pt(1,zt1),pt(1,zb1),pt(0,zb0)], H=Math.max(zt0-zb0,zt1-zb1), base=lit?'#aaa498':'#7c776e';
+  cliffFace(c,face,nc(shq(base,1.04),n),nc(shq(base,.74),n)); if(H<6)return;
+  const seed=hsh(Math.round(e0[0]*2+e1[0]*3),Math.round(e0[1]*2+e1[1]*3),lit?17:29), r=rng(seed);
+  const jit=(v,k)=>((hsh(Math.round(v[0])*7+k,Math.round(v[1])*13-k,91)%100)/100-.5)*8;
+  c.save(); path(c,face); c.clip();
+  const zmin=Math.min(zb0,zb1), zmax=Math.max(zt0,zt1), RH=13;
+  for(let k=Math.floor(zmin/RH);k*RH<zmax;k++){const lo=u=>k*RH+jit(e0,k)*(1-u)+jit(e1,k)*u, hi=u=>(k+1)*RH+jit(e0,k+1)*(1-u)+jit(e1,k+1)*u;
+    const cuts=[0]; let u=.12+r()*.3; while(u<.9){cuts.push(u); u+=.25+r()*.35;} cuts.push(1);
+    for(let q=0;q+1<cuts.length;q++){const u0=cuts[q],u1=cuts[q+1], f=.84+r()*.3, g0=r()*1.2, g1=r()*1.2;
+      const cell=[pt(u0,lo(u0)+g0),pt(u1,lo(u1)+g1),pt(u1,hi(u1)-g1),pt(u0,hi(u0)-g0)];
+      poly(c,cell,nc(shq(base,f),n));
+      if(r()<.18&&hi(u0)>zt(u0)-RH*2.2)poly(c,cell,'rgba(86,128,58,'+(.18+r()*.2).toFixed(2)+')');   // musgo perto do alto
+      if(r()<.25){const um=u0+(u1-u0)*(.3+r()*.4); line(c,pt(um,hi(um)-1),pt(um+(r()-.5)*.06,lo(um)+1),'rgba(30,26,22,.18)',.8);}
+      line(c,cell[3],cell[2],'rgba(255,250,235,'+(lit?.22:.12)+')',1);   // aresta de cima pega luz
+      line(c,cell[0],cell[1],'rgba(30,26,22,.32)',1.1);                  // junta de baixo
+      line(c,cell[1],cell[2],'rgba(30,26,22,.22)',.9);}}
+  for(let k=0;k<1+(r()<.5);k++){const u=.15+r()*.7; let z=zt(u)-2, uu=u; c.beginPath(); c.moveTo(...pt(uu,z));
+    while(z>zb(uu)+3&&z>zt(u)-H*.8){z-=4+r()*5; uu=clamp(uu+(r()-.5)*.08,0,1); c.lineTo(...pt(uu,z));}
+    c.strokeStyle='rgba(28,24,20,.4)'; c.lineWidth=.9; c.stroke();}
+  const y0=Math.min(face[2][1],face[3][1])-Math.min(H,26), y1=Math.max(face[2][1],face[3][1]);
+  const gr=c.createLinearGradient(0,y0,0,y1); gr.addColorStop(0,'rgba(20,18,15,0)'); gr.addColorStop(1,'rgba(20,18,15,.38)'); poly(c,face,gr);
+  c.restore();
+  if(grass){const pts=[pt(0,zt0+.5),pt(1,zt1+.5)]; for(let k=8;k>=0;k--){const u=k/8; pts.push(pt(u,Math.max(zb(u)+1,zt(u)-(1.5+r()*4.5))));}
+    poly(c,pts,nc(lit?'#6c9e4b':'#56853b',n)); line(c,pt(0,zt0),pt(1,zt1),'rgba(255,255,255,.14)',1);}}
 function drawColumn(c,x,y,n){const i=y*N+x, cz=cornerZ(x,y), tr=G.tr[i];
   const nbz=(X,Y)=>inMap(X,Y)?((G.tr[Y*N+X]===1||G.tr[Y*N+X]===2)?[0,0,0,0]:cornerZ(X,Y)):[-20,-20,-20,-20];
-  const col=CLIFF[tr]||'#8a7356';
-  setW(c); const r=nbz(x+1,y); // face direita
-  if(cz[1]>r[0]||cz[2]>r[3]){cliffFace(c,[P(x+1,y,cz[1]),P(x+1,y+1,cz[2]),P(x+1,y+1,r[3]),P(x+1,y,r[0])],nc(sh(col,.72),n),nc(sh(col,.46),n));
-    line(c,P(x+1,y,cz[1]),P(x+1,y+1,cz[2]),'rgba(255,255,255,.1)',1);
-    for(let z=Math.min(r[0],r[3])+5;z<Math.max(cz[1],cz[2])-2;z+=5){const za=Math.min(z,cz[1]),zb=Math.min(z,cz[2]); if(za>r[0]&&zb>r[3])line(c,P(x+1,y,za),P(x+1,y+1,zb),'rgba(0,0,0,.07)',1);}}
-  const l=nbz(x,y+1); // face esquerda
-  if(cz[3]>l[0]||cz[2]>l[1]){cliffFace(c,[P(x,y+1,cz[3]),P(x+1,y+1,cz[2]),P(x+1,y+1,l[1]),P(x,y+1,l[0])],nc(sh(col,.9),n),nc(sh(col,.64),n));
-    for(let z=Math.min(l[0],l[1])+5;z<Math.max(cz[3],cz[2])-2;z+=5){const za=Math.min(z,cz[3]),zb=Math.min(z,cz[2]); if(za>l[0]&&zb>l[1])line(c,P(x,y+1,za),P(x+1,y+1,zb),'rgba(0,0,0,.06)',1);}}
-  const pl=tilePlanes(x,y), pat=isUl(x,y)?SOIL_PAT(tr):lockPat(tr);
+  const grass=tr===0||tr===5;
+  setW(c); const r=nbz(x+1,y); // face direita (na sombra)
+  if(cz[1]>r[0]||cz[2]>r[3])rockFace(c,[x+1,y],[x+1,y+1],cz[1],cz[2],Math.min(r[0],cz[1]),Math.min(r[3],cz[2]),false,grass,n);
+  const l=nbz(x,y+1); // face esquerda (no sol)
+  if(cz[3]>l[0]||cz[2]>l[1])rockFace(c,[x,y+1],[x+1,y+1],cz[3],cz[2],Math.min(l[0],cz[3]),Math.min(l[1],cz[2]),true,grass,n);
+  const pl=tilePlanes(x,y), pat=isUl(x,y)?SOIL_PAT(tr):lockPat(tr), low=tileIsLow(x,y,cz);
   for(const q of pl){setIsoPlane(c,x,y,q.zc,q.A,q.B); c.save(); c.beginPath();
     if(q.tri){const t=q.tri, mx=(t[0][0]+t[1][0]+t[2][0])/3, my=(t[0][1]+t[1][1]+t[2][1])/3;
       t.forEach((v,k)=>{const px=x+mx+(v[0]-mx)*1.05, py=y+my+(v[1]-my)*1.05; k?c.lineTo(px,py):c.moveTo(px,py);}); c.closePath();}
     else c.rect(x-.02,y-.02,1.04,1.04);
-    c.clip(); patT(pat,32); c.fillStyle=pat; c.fillRect(x-1,y-1,3,3); shadeRect(c,x-1,y-1,4,4); c.restore();}
+    c.clip(); patT(pat,32); c.fillStyle=pat; c.fillRect(x-1,y-1,3,3); shadeRect(c,x-1,y-1,4,4,low); c.restore();}
   setIsoTile(c,x,y); tileTop(c,x,y);
   setW(c);}
+/* ---- Serra do fundo: picos de pedra com neve (enfeite) ---- */
+function drawPeak(c,pk,n){const r=rng(pk.k), [X,Y]=P(pk.x+.5,pk.y+.5,LV_P*HZ), W=pk.w, H=pk.h, sx=X+pk.sx*W, sy=Y-H;
+  // contorno: encosta esquerda e direita com quebras irregulares
+  const side=(x0,y0,x1,y1,k)=>{const out=[]; for(let i=1;i<k;i++){const t=i/k; out.push([x0+(x1-x0)*t+(r()-.5)*W*.06, y0+(y1-y0)*t+(r()-.5)*H*.05]);} return out;};
+  const L=[X-W/2,Y+8], R=[X+W/2,Y+8], S=[sx,sy];
+  const left=side(L[0],L[1],S[0],S[1],6), right=side(S[0],S[1],R[0],R[1],6);
+  const outline=[L,...left,S,...right,R];
+  const foot=[sx+W*(.08+r()*.1),Y+8], ridge=[S,...side(S[0],S[1],foot[0],foot[1],5),foot];
+  setW(c); poly(c,outline,nc('#706c66',n));
+  c.save(); path(c,outline); c.clip();
+  poly(c,[L,...left,...ridge],nc('#aaa59c',n));                         // lado no sol
+  for(let k=0;k<7;k++){const a=r(), t=.25+r()*.6, bx=L[0]+(R[0]-L[0])*a, by=sy+H*t;   // facetas
+    poly(c,[[bx,by],[bx+W*(.05+r()*.08),by+H*(.18+r()*.2)],[bx-W*(.03+r()*.06),by+H*(.22+r()*.2)]],nc(a<.45?'#bab5ac':'#615d58',n));}
+  const snowY=sy+H*(.34+r()*.1), zig=[]; for(let k=0;k<=10;k++){const t=k/10; zig.push([L[0]+(R[0]-L[0])*t, snowY+(k%2?H*.07:-H*.02)+r()*H*.06-(Math.abs(t-.5+pk.sx*.5))*H*.12]);}
+  const snow=[[L[0],sy-10],[R[0],sy-10],...zig.reverse()];
+  poly(c,snow,nc('#c7d1de',n));                                         // neve na sombra
+  c.save(); path(c,[L,...left,...ridge]); c.clip(); poly(c,snow,nc('#f5f8fc',n)); c.restore();
+  const gr=c.createLinearGradient(0,Y-H*.35,0,Y+8); gr.addColorStop(0,'rgba(40,50,45,0)'); gr.addColorStop(1,nc('#3f5a3a',n)); poly(c,outline,gr); // base esverdeada
+  c.restore();
+  c.strokeStyle='rgba(30,28,26,.35)'; c.lineWidth=1; c.beginPath(); c.moveTo(...ridge[0]); for(const p of ridge)c.lineTo(...p); c.stroke();}
+const peakBox=pk=>{const [X,Y]=P(pk.x+.5,pk.y+.5,LV_P*HZ); return [X-pk.w*.6-4,Y-pk.h-16,X+pk.w*.6+4,Y+12];};
 
 /* ---- 53-cache-por-pedaco.js ---- */
 /* ================= Cache do mapa por pedaço (8x8) =================
@@ -2354,7 +2379,7 @@ function ckHashes(cx,cy){let hb=17,hd=19,hs=23,hl=29; const x0=cx*CH,y0=cy*CH;
     hd=hmix(hd,t^(r<<12)); const q0=(y*2)*Q2+x*2, q1=q0+Q2; hd=hmix(hd,G.pv[q0]|G.pv[q0+1]<<4|G.pv[q1]<<8|G.pv[q1+1]<<12);
     hs=hmix(hs,t^(r<<12)^(G.ob[i]<<20)^(D.under[i]<<24)); hs=hmix(hs,G.fc[q0]|G.fc[q0+1]<<4|G.fc[q1]<<8|G.fc[q1+1]<<12);
     hl=hmix(hl,(G.rd[i]|(G.rp[i]<<3)|(G.ht[i]<<8))+(i<<12));}
-  hb=hmix(hb,S.ul[cy*NC+cx]?7:3); hs=hmix(hs,PORTAL.x>=x0&&PORTAL.x<x0+CH&&PORTAL.y>=y0&&PORTAL.y<y0+CH?11:1);
+  hb=hmix(hb,S.ul[cy*NC+cx]?7:3); hs=hmix(hs,(S.seed|0)^(cx*31+cy)); hs=hmix(hs,PORTAL.x>=x0&&PORTAL.x<x0+CH&&PORTAL.y>=y0&&PORTAL.y<y0+CH?11:1);
   const now=Date.now(); for(const b of (D.ckB[cy*NC+cx]||[])){const t=T[b.k]; if(!t.glow&&!t.lamp)continue; hl=hmix(hl,b.i*31+b.x*7+b.y*13+(b.f?5:0)+(now>=b.d?1:0));}
   return [hb,hd,hs,hl];}
 // cria uma camada desenhando no retângulo do mundo [bx0,by0]-[bx1,by1] com resolução rs
@@ -2386,7 +2411,7 @@ function drawBase(c,cx,cy){const x0=cx*CH,y0=cy*CH; setIso(c); const e=.03;
       for(let y=y0;y<y0+CH;y++)for(let x=x0;x<x0+CH;x++){const i=y*N+x; if(isWater(i))continue; if((G.tr[i]===code)||(code===0&&G.tr[i]===0)){c.rect(x-e,y-e,1+2*e,1+2*e); any=true;}}
       if(any){const p=SOIL_PAT(code); patT(p,32); c.fillStyle=p; c.fill();}}
     if(!S.ul[cy*NC+cx]){patT(PAT.lock,32); c.globalAlpha=.55; c.fillStyle=PAT.lock; c.fillRect(x0-e,y0-e,CH+2*e,CH+2*e); c.globalAlpha=1;}
-    c.save(); c.beginPath(); c.rect(x0-e,y0-e,CH+2*e,CH+2*e); c.clip(); shadeRect(c,x0-1,y0-1,CH+3,CH+3); c.restore(); setIso(c);
+    c.save(); c.beginPath(); c.rect(x0-e,y0-e,CH+2*e,CH+2*e); c.clip(); shadeRect(c,x0-1,y0-1,CH+3,CH+3,true); c.restore(); setIso(c);
     c.globalCompositeOperation='destination-out'; c.fillStyle='#000'; c.beginPath(); let wat=false;
     for(let y=y0-1;y<=y0+CH;y++)for(let x=x0-1;x<=x0+CH;x++){if(inMap(x,y)&&isWater(y*N+x)){c.rect(x,y,1,1); wat=true;}}
     if(wat)c.fill(); c.globalCompositeOperation='source-over';
@@ -2438,6 +2463,7 @@ function ckItems(cx,cy){const x0=cx*CH,y0=cy*CH, out=[];
     for(const [a,b] of [[0,0],[1,0],[0,1],[1,1]]){const qx=x*2+a,qy=y*2+b; if(G.fc[qy*Q2+qx])out.push({d:el?x+y+1.01+(a+b)*.01:(qx+.5)/2+(qy+.5)/2+.02,t:3,qx,qy,x,y});}
     const l=streetLampAt(x,y); if(l)out.push({d:el?x+y+1.01:l[0]+l[1]+.01,t:4,lx:l[0],ly:l[1],z:l[3],x,y});
     if(x===PORTAL.x&&y===PORTAL.y)out.push({d:x+y+1.4,t:5,x,y});}
+  for(const pk of peaks())if(Math.floor(pk.x/CH)===cx&&Math.floor(pk.y/CH)===cy)out.push({d:pk.x+pk.y+1.5,t:6,x:pk.x,y:pk.y,pk});
   return out;}
 function itemBox(it){const x=it.x,y=it.y;
   switch(it.t){case 0:{const cz=cornerZ(x,y); return tileBox(x,y,x+1,y+1,-22,Math.max(...cz)+2);}
@@ -2446,7 +2472,8 @@ function itemBox(it){const x=it.x,y=it.y;
     case 2:return tileBox(x,y,x+1,y+1,-8,52);
     case 3:{const z=hAt((it.qx+.5)/2,(it.qy+.5)/2); return tileBox(it.qx/2,it.qy/2,it.qx/2+.5,it.qy/2+.5,z-2,z+16);}
     case 4:{const [X,Y]=P(it.lx,it.ly,it.z); return [X-7,Y-36,X+10,Y+4];}
-    case 5:return tileBox(x-2,y-2,x+2,y+3,-4,64);}
+    case 5:return tileBox(x-2,y-2,x+2,y+3,-4,64);
+    case 6:return peakBox(it.pk);}
   return tileBox(x,y,x+1,y+1,0,40);}
 function drawItem(c,it,n){const x=it.x,y=it.y;
   switch(it.t){case 0:drawColumn(c,x,y,n);break;
@@ -2454,7 +2481,8 @@ function drawItem(c,it,n){const x=it.x,y=it.y;
     case 2:setW(c); bridgeTile(c,x,y,true,n);break;
     case 3:setW(c); drawFence(c,it.qx,it.qy,n);break;
     case 4:setW(c); drawLampPost(c,it.lx,it.ly,n,it.z);break;
-    case 5:setW(c); drawPortal(c,n);break;}}
+    case 5:setW(c); drawPortal(c,n);break;
+    case 6:drawPeak(c,it.pk,n);break;}}
 function bakeGroups(cx,cy,rs,night){const items=ckItems(cx,cy), m=new Map();
   for(const it of items){const key=it.d<-1e5?UNDER_D(cx,cy):Math.round(it.d*10)/10; let gr=m.get(key); if(!gr)m.set(key,gr={d:key,items:[]}); gr.items.push(it);}
   const out=[...m.values()].sort((a,b)=>a.d-b.d);
@@ -2954,6 +2982,11 @@ function pedAtlas(o){let A=PATL.get(o); if(A)return A; const ot=outfit(o); const
 /* ================= Extras animados: roda-gigante, eólicas, zoológico, aviões, iate, farol, fogo e fumaça =================
  Tudo vira sprite pronto (por quadro de animação) e entra na lista de desenho ordenada. */
 function extraItems(items,now,n,vis){const nn=n>.5?1:0;
+  // neblina passando pela serra
+  const fogC=n>.5?'120,135,165':'236,241,246';
+  for(const pk of peaks()){const r=pk.k%97/97; if(r<.35)continue; const [X,Y]=P(pk.x+.5,pk.y+.5,LV_P*HZ), t=now/1000;
+    for(let q=0;q<2;q++){const w=pk.w*(1.1+q*.4), h=w*.32, dx=Math.sin(t*.05+r*9+q*2)*pk.w*.35, cy=Y-pk.h*(.18+q*.22);
+      items.push({d:pk.x+pk.y+1.6+q*.01,t:9,f:()=>pImg(glowImg(fogC),X+dx-w/2,cy-h/2,w,h,(.32+.12*Math.sin(t*.07+q+r*5))*(1-.4*n))});}}
   for(const b of S.b){const t=T[b.k]; if(!vis(b,fw(b),fh(b)))continue; const done=now>=b.d;
     const base=b.x+b.y+(fw(b)+fh(b))/2+.001, zb=G.ht[b.y*N+b.x]*HZ;
     if(done&&t.anim==='ferris'){const [hx,hy]=P(b.x+fw(b)/2,b.y+fh(b)/2,zb+2+ferrisR()+8); const st=Math.floor(now/120)%24;
@@ -3035,7 +3068,7 @@ function skyExtra(now,n,W,vx,vy,vw,vh){cloudShadows(now,W,vx,vy,vw,vh);}
 /* ---- 60-entrada-toque.js ---- */
 /* ================= Entrada ================= */
 const ptrs=new Map(); let drag=null, pinch=null, painting=null;
-function pickG(sx,sy){const [wx,wy]=s2w(sx,sy); let [gx,gy]=w2g(wx,wy); for(let k=0;k<3;k++){const x=Math.floor(gx),y=Math.floor(gy); const z=inMap(x,y)?hAt(clamp(gx,x,x+.999),clamp(gy,y,y+.999)):0; [gx,gy]=w2g(wx,wy+z);} return [gx,gy];}
+function pickG(sx,sy){const [wx,wy]=s2w(sx,sy); let [gx,gy]=w2g(wx,wy); for(let k=0;k<6;k++){const x=Math.floor(gx),y=Math.floor(gy); const z=inMap(x,y)?hAt(clamp(gx,x,x+.999),clamp(gy,y,y+.999)):0; [gx,gy]=w2g(wx,wy+z);} return [gx,gy];}
 function tileAt(sx,sy){const [gx,gy]=pickG(sx,sy); return [Math.floor(gx),Math.floor(gy)];}
 function qAt(sx,sy){const [gx,gy]=pickG(sx,sy); return [Math.floor(gx*2),Math.floor(gy*2)];}
 function curOpt(){const tl=TOOLS[mode.tool]; if(!tl)return 0; if(mode.tool==='nivelar')return painting&&painting.level!=null?painting.level:0; return tl.opt==='bridge'?OPT.bm:tl.opt==='pave'?OPT.pv:tl.opt==='fence'?OPT.fc:tl.opt==='soil'?OPT.soil:0;}

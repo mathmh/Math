@@ -9,17 +9,32 @@ function riverY(xx){return 26.8+2.6*Math.sin((xx-6)*0.13)+0.7*Math.sin(xx*0.41+0
 function vnoise(seed){const h=(x,y)=>(hsh(x+seed*7,y-seed*3,seed+11)%10007)/10007;
   return (x,y)=>{const xi=Math.floor(x),yi=Math.floor(y),fx=x-xi,fy=y-yi,sx=fx*fx*(3-2*fx),sy=fy*fy*(3-2*fy);
     const a=h(xi,yi),b=h(xi+1,yi),c=h(xi,yi+1),d=h(xi+1,yi+1); return a+(b-a)*sx+(c-a)*sy+(a-b-c+d)*sx*sy;};}
-function mountainF(x,y,nz){const xx=x+.5,yy=y+.5; const w=(nz[0](xx*.11,yy*.11)-.5)*6;
-  let m=clamp((15.5+w-xx)/8,0,1)*clamp((24.5+w-yy)/5,0,1);
-  m=Math.max(m,clamp((8.5+w*.7-yy)/5.5,0,1)*clamp((37+w-xx)/8,0,1)*.92);
-  const f=nz[1](xx*.16,yy*.16)*.62+nz[2](xx*.34,yy*.34)*.28+nz[3](xx*.7,yy*.7)*.1;
-  const r=Math.abs(nz[3](xx*.22+3,yy*.22)-.5)*2; return m<=0?0:m*(.9+f*3.4+(1-r)*1.3)+(f-.5)*.6*m;}
 const inStart=(x,y)=>x>=16&&x<32&&y>=16&&y<32;
 const nearPortal=(x,y)=>x>=14&&x<=16&&y>=16&&y<=18;
-// relevo pelas alturas dos cantos (vértices): vizinhos diferem no máximo 1 nível, então cada quadrado vira
-// plano, rampa, canto externo ou canto interno e as encostas emendam sem degraus. pin(X,Y) fixa a altura de um vértice (-1 = livre).
-function genTerrain(seed,pin){const tr=new Uint8Array(N*N), ht=new Uint8Array(N*N), rp=new Uint8Array(N*N);
-  const nz=[0,1,2,3].map(k=>vnoise(seed+k*101));
+/* Relevo em platôs (estilo serra): chão no nível 0, platô baixo A (nível 3) colado na cidade, platô alto B (nível 6)
+   atrás dele e a serra de picos no fundo do mapa (só enfeite, não dá para construir). As bordas são paredões de rocha.
+   As ruas já vêm prontas: A sobe por uma rampa colada no paredão sul; B por uma estrada na encosta leste. */
+const LV_A=3, LV_B=6, LV_P=7;
+function peakZone(x,y){return (y<=2&&x<=28)||(x<=2&&y<=23)||(x+y<=10);}
+function plateauShape(seed){const nz=vnoise(seed+303), n=(t,k)=>Math.round((nz(t*.33,k*7.3)-.5)*3.2);
+  const bS=x=>x>=10&&x<=22?9:clamp(9+n(x,1),8,10);          // última linha do platô B (sul)
+  const bE=y=>clamp(21+n(y,2),20,21);                       // última coluna de B (leste); a estrada fica em x=22
+  const aE=y=>y>=13?15:clamp(14+n(y,3),13,15);              // última coluna de A (leste): paredão do túnel em x=15
+  const aS=x=>x>=12?21:clamp(21+n(x,4),20,22);              // última linha de A (sul): a rampa corre na borda
+  const inB=(x,y)=>!peakZone(x,y)&&x>=3&&y>=3&&x<=bE(y)&&y<=bS(x);
+  const inA=(x,y)=>!peakZone(x,y)&&!inB(x,y)&&x>=3&&x<=aE(y)&&y>bS(x)&&y<=aS(x);
+  return {inA,inB,bS};}
+// ruas prontas: [x,y,nível,rampa]
+function presetRoads(){const out=[], add=(x,y,h,r)=>out.push([x,y,h,r||0]);
+  // A: rampa subindo para oeste na borda sul (sai da rua principal em x=16), depois rua norte-sul em x=12
+  add(15,21,0,3); add(14,21,1,3); add(13,21,2,3); for(let y=10;y<=21;y++)add(12,y,LV_A);
+  // B: rua no chão saindo da coluna x=27, estrada subindo para o norte colada no paredão leste e rua no alto
+  for(let x=23;x<=27;x++)add(x,15,0); for(let y=10;y<=15;y++)add(22,y,0);
+  for(let k=0;k<6;k++)add(22,9-k,k,4);
+  for(let x=12;x<=22;x++)add(x,3,LV_B); for(let y=4;y<=9;y++)add(12,y,LV_B);
+  return out;}
+function genTerrain(seed){const tr=new Uint8Array(N*N), ht=new Uint8Array(N*N), rp=new Uint8Array(N*N), rd=new Uint8Array(N*N);
+  const sh=plateauShape(seed);
   for(let y=0;y<N;y++)for(let x=0;x<N;x++){const i=y*N+x;
     const coast=53.5+1.6*Math.sin(y*0.21+0.7)+1.1*Math.sin(y*0.071+2.1); let v=0;
     if(x+.5>coast)v=2; else if(x+.5>coast-2.3)v=3;
@@ -27,51 +42,18 @@ function genTerrain(seed,pin){const tr=new Uint8Array(N*N), ht=new Uint8Array(N*
     const xx=x+.5, hw=1.25+(xx>40?Math.min(.7,(xx-40)*.05):0);
     if(Math.abs(y+.5-riverY(xx))<hw&&v!==2)v=1;
     const lx=(x+.5-42)/4.6, ly=(y+.5-11)/3.4; if(lx*lx+ly*ly<1+.12*Math.sin(x*1.3+y*.7))v=1;
-    tr[i]=v;}
-  const M=N+1, V=new Int8Array(M*M), PN=new Int8Array(M*M).fill(-1);
-  for(let Y=0;Y<M;Y++)for(let X=0;X<M;X++){const j=Y*M+X; let h=0, wet=false, st=false;
-    for(const [a,b] of [[-1,-1],[0,-1],[-1,0],[0,0]]){const x=X+a,y=Y+b; if(!inMap(x,y))continue; const t=tr[y*N+x];
-      if(t===1||t===2||t===3)wet=true; if(inStart(x,y))st=true;
-      if(t===0)h=Math.max(h,Math.floor(mountainF(X-.5,Y-.5,nz)));
-      if(t===4&&X>2&&Y<N-2){const d=nz[2]((X-.5)*.3,(Y-.5)*.3); h=Math.max(h,d>.8?2:d>.62?1:0);}}
-    // morro do túnel, perto do centro (o portal fica na encosta, de frente para o trilho)
-    if(X>=10&&X<=15&&Y>=14&&Y<=21){const dy=Math.abs(Y-17.5); h=Math.max(h,dy<=2?(X>=14?2:3):dy<=3?(X>=14?1:2):(X>=13?0:1));}
-    V[j]=clamp(h,0,4);
-    const p=pin?pin(X,Y):-1;
-    if(p>=0)PN[j]=p; else if(wet||st)PN[j]=0; else if(X>=14&&X<=15&&Y>=16&&Y<=19)PN[j]=2;
-    if(PN[j]>=0)V[j]=PN[j];}
-  const NB=[[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,-1],[1,-1],[-1,1]];
-  const lip=()=>{for(let it=0;it<60;it++){let ch=false;
-      for(const dir of [1,-1])for(let k=0;k<M*M;k++){const j=dir>0?k:M*M-1-k; if(PN[j]>=0)continue; const X=j%M,Y=(j/M)|0; let lo=99;
-        for(const [a,b] of NB){const XX=X+a,YY=Y+b; if(XX<0||YY<0||XX>=M||YY>=M)continue; lo=Math.min(lo,V[YY*M+XX]);} if(V[j]>lo+1){V[j]=lo+1; ch=true;}}
-      for(let j=0;j<M*M;j++){if(PN[j]>=0)continue; const X=j%M,Y=(j/M)|0; let hi=0;
-        for(const [a,b] of NB){const XX=X+a,YY=Y+b; if(XX<0||YY<0||XX>=M||YY>=M)continue; hi=Math.max(hi,V[YY*M+XX]);} if(V[j]<hi-1){V[j]=hi-1; ch=true;}}
-      if(!ch)break;}};
-  const cs=(x,y)=>{const a=y*M+x; return [a,a+1,a+M+1,a+M];};
-  lip();
-  // sela (dois cantos opostos altos): abaixa um deles; repete até sumir
-  for(let it=0;it<12;it++){let n=0;
-    for(let y=0;y<N;y++)for(let x=0;x<N;x++){const c=cs(x,y), z=c.map(j=>V[j]); if(z[0]!==z[2]||z[1]!==z[3]||z[0]===z[1])continue;
-      const hiK=z[0]>z[1]?[0,2]:[1,3], loK=z[0]>z[1]?[1,3]:[0,2]; let done=false;
-      for(const k of hiK)if(PN[c[k]]<0){V[c[k]]--; done=true; break;}
-      if(!done)for(const k of loK)if(PN[c[k]]<0){V[c[k]]++; done=true; break;}
-      if(done)n++;}
-    if(!n)break; lip();}
-  for(let y=0;y<N;y++)for(let x=0;x<N;x++){const i=y*N+x, z=cs(x,y).map(j=>V[j]);
-    if(tr[i]===1||tr[i]===2){ht[i]=0; continue;}
-    const s=shapeOf(z); if(s){ht[i]=s[0]; rp[i]=s[1];} else ht[i]=Math.max(...z)-Math.min(...z)>1?Math.max(...z):Math.min(...z); // sem forma: só perto do paredão do túnel
-}
-  // neve e rocha não viram quadrados: a neve dos picos entra em degradê no sombreado (shadeMaps)
-  // boca do túnel: platô no nível 2 com paredão virado para o trilho
-  for(let y=16;y<=18;y++)for(let x=14;x<=15;x++){const i=y*N+x; if(tr[i]===1||tr[i]===2)continue; ht[i]=2; rp[i]=0;}
-  return {tr,ht,rp};}
-// forma do quadrado a partir das alturas dos 4 cantos (em níveis): [nível, rampa] ou null se não tiver forma
-function shapeOf(z){const lo=Math.min(...z), hi=Math.max(...z); if(hi===lo)return [lo,0]; if(hi-lo>1)return null;
-  const up=z.map(v=>v>lo?1:0), n=up[0]+up[1]+up[2]+up[3];
-  if(n===1)return [lo,5+up.indexOf(1)];
-  if(n===3)return [lo,9+up.indexOf(0)];
-  if(up[1]&&up[2])return [lo,1]; if(up[2]&&up[3])return [lo,2]; if(up[0]&&up[3])return [lo,3]; if(up[0]&&up[1])return [lo,4];
-  return null;}
+    let h=0; if(v===0){if(peakZone(x,y)){h=LV_P; v=7;} else if(sh.inB(x,y))h=LV_B; else if(sh.inA(x,y))h=LV_A;}
+    tr[i]=v; ht[i]=h;}
+  for(const [x,y,h,r] of presetRoads()){const i=y*N+x; if(tr[i]===1||tr[i]===2)continue; ht[i]=h; rp[i]=r; rd[i]=1;}
+  return {tr,ht,rp,rd};}
+// picos da serra (enfeite desenhado por cima da faixa de rocha do fundo)
+let PEAK_C=null;
+function peaks(){const seed=S?S.seed||1:1; if(PEAK_C&&PEAK_C.seed===seed)return PEAK_C.list; const r=rng(seed+77), list=[];
+  const add=(x,y,big)=>list.push({x,y,w:(big?220:160)+r()*80,h:(big?210:150)+r()*90,sx:(r()-.5)*.3,k:Math.floor(r()*1e6)});
+  for(let x=3;x<=27;x+=4+Math.floor(r()*2))add(x,1,r()<.5);
+  for(let y=5;y<=22;y+=4+Math.floor(r()*2))add(1,y,r()<.5);
+  add(4,4,true);
+  PEAK_C={seed,list}; return list;}
 // alturas dos 4 cantos em níveis a partir de ht/rp
 function cornerL(h,r){if(!r)return [h,h,h,h];
   if(r<5){const d=r-1; return d===0?[h,h+1,h+1,h]:d===1?[h,h,h+1,h+1]:d===2?[h+1,h,h,h+1]:[h+1,h+1,h,h];}
@@ -80,6 +62,7 @@ const DIRS4=[[1,0],[0,1],[-1,0],[0,-1]];
 function genObstacles(tr,ht,seed){const ob=new Uint8Array(N*N), r=rng(seed);
   const nz=(x,y)=>Math.sin(x*.21+seed%7)*Math.cos(y*.17+1.3)+Math.sin((x+y)*.09+2)*.6;
   for(let y=0;y<N;y++)for(let x=0;x<N;x++){const i=y*N+x; const v=tr[i]; if(v!==0&&v!==4&&v!==6&&v!==7)continue; if(nearPortal(x,y))continue;
+    if(peakZone(x,y)){if(v===7&&r()<.07)ob[i]=2; continue;}
     const ch=Math.floor(x/CH)+Math.floor(y/CH)*NC, start=START_CH.some(([a,b])=>a+b*NC===ch);
     if(v===4){if(r()<.09)ob[i]=r()<.75?5:3; continue;}
     const mt=ht[i]>0, forest=nz(x,y)>.55||mt, u0=r();
@@ -99,7 +82,7 @@ function newGame(keep){
     col:{}, ord:[], ordT:[0,0,0], ch:null, title:0, taxT:now, evSeen:''};
   fillNewState(s,now);
   START_CH.forEach(([cx,cy])=>s.ul[cy*NC+cx]=1);
-  G=emptyGrids(); const tg=genTerrain(seed); G.tr=tg.tr; G.ht=tg.ht; G.rp=tg.rp; G.ob=genObstacles(G.tr,G.ht,seed);
+  G=emptyGrids(); const tg=genTerrain(seed); G.tr=tg.tr; G.ht=tg.ht; G.rp=tg.rp; G.ob=genObstacles(G.tr,G.ht,seed); for(let i=0;i<N*N;i++)if(tg.rd[i]){G.rd[i]=1; G.ob[i]=0;}
   G.rl[TUN.y*N+TUN.x]=1; G.rl[TUN.y*N+TUN.x+1]=1;
   const add=(k,x,y,extra)=>{const t=T[k]; s.b.push(Object.assign({i:s.nid++,k,x,y,f:0,lv:1,d:now,a:0,s:0},extra||{}));
     for(let dy=0;dy<t.h;dy++)for(let dx=0;dx<t.w;dx++)G.ob[(y+dy)*N+x+dx]=0;};
@@ -145,14 +128,13 @@ function fillNewState(s,now){if(!s.name)s.name='Cidade Viva'; if(!s.laws)s.laws=
   for(const k of ['fire','fireOut','harvestT','research','reqs','law','chainStep'])if(s.st&&s.st[k]==null)s.st[k]=0;}
 // relevo novo nas áreas não compradas. O que o jogador já tem (áreas compradas, água, ruas, trilhos) fica igual
 // e as alturas dos cantos dele viram pontos fixos, para o relevo novo encostar sem degrau.
-const TERR_VER=2;
+const TERR_VER=3;
 function refreshTerrain(s,g){const seed=s.seed||1, owned=(x,y)=>!!(s.ul||[])[Math.floor(y/CH)*NC+Math.floor(x/CH)];
-  const keep=new Uint8Array(N*N); for(let i=0;i<N*N;i++){const x=i%N,y=(i/N)|0; keep[i]=owned(x,y)||g.tr[i]===1||g.tr[i]===2||g.rd[i]||g.rl[i]?1:0;}
-  const pin=(X,Y)=>{let v=-1; for(const [a,b,k] of [[-1,-1,2],[0,-1,3],[-1,0,1],[0,0,0]]){const x=X+a,y=Y+b; if(!inMap(x,y))continue; const i=y*N+x; if(!keep[i])continue;
-    v=Math.max(v,(g.tr[i]===1||g.tr[i]===2)?0:cornerL(g.ht[i],g.rp[i])[k]);} return v;};
-  const tg=genTerrain(seed,pin), ob=genObstacles(tg.tr,tg.ht,seed);
-  for(let i=0;i<N*N;i++){if(keep[i]||tg.tr[i]===1||tg.tr[i]===2)continue; const o=g.tr[i];
-    g.ht[i]=tg.ht[i]; g.rp[i]=tg.rp[i]; if(o===0||o===6||o===5||o===4||o===7)g.tr[i]=tg.tr[i]===3?o:tg.tr[i]; g.ob[i]=ob[i];}
+  const tg=genTerrain(seed), ob=genObstacles(tg.tr,tg.ht,seed);
+  for(let i=0;i<N*N;i++){const x=i%N,y=(i/N)|0, o=g.tr[i];
+    if(owned(x,y)||o===1||o===2||g.rd[i]||g.rl[i]||tg.tr[i]===1||tg.tr[i]===2)continue;
+    g.ht[i]=tg.ht[i]; g.rp[i]=tg.rp[i]; if(o===0||o===6||o===5||o===4||o===7)g.tr[i]=tg.tr[i]===3?o:tg.tr[i];
+    g.ob[i]=tg.rd[i]?0:ob[i]; if(tg.rd[i])g.rd[i]=1;}
   s.terr=TERR_VER;}
 // save v3 → v4: relevo novo nas áreas não compradas e túnel novo perto do centro
 function migrateV4(s,g){const owned=(x,y)=>!!(s.ul||[])[Math.floor(y/CH)*NC+Math.floor(x/CH)];

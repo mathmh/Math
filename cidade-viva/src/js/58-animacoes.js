@@ -1,6 +1,11 @@
 /* ================= Extras animados: roda-gigante, eólicas, zoológico, aviões, iate, farol, fogo e fumaça =================
  Tudo vira sprite pronto (por quadro de animação) e entra na lista de desenho ordenada. */
 function extraItems(items,now,n,vis){const nn=n>.5?1:0;
+  // neblina passando pela serra
+  const fogC=n>.5?'120,135,165':'236,241,246';
+  for(const pk of peaks()){const r=pk.k%97/97; if(r<.35)continue; const [X,Y]=P(pk.x+.5,pk.y+.5,LV_P*HZ), t=now/1000;
+    for(let q=0;q<2;q++){const w=pk.w*(1.1+q*.4), h=w*.32, dx=Math.sin(t*.05+r*9+q*2)*pk.w*.35, cy=Y-pk.h*(.18+q*.22);
+      items.push({d:pk.x+pk.y+1.6+q*.01,t:9,f:()=>pImg(glowImg(fogC),X+dx-w/2,cy-h/2,w,h,(.32+.12*Math.sin(t*.07+q+r*5))*(1-.4*n))});}}
   for(const b of S.b){const t=T[b.k]; if(!vis(b,fw(b),fh(b)))continue; const done=now>=b.d;
     const base=b.x+b.y+(fw(b)+fh(b))/2+.001, zb=G.ht[b.y*N+b.x]*HZ;
     if(done&&t.anim==='ferris'){const [hx,hy]=P(b.x+fw(b)/2,b.y+fh(b)/2,zb+2+ferrisR()+8); const st=Math.floor(now/120)%24;
