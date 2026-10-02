@@ -50,6 +50,7 @@ function drawBase(c,cx,cy){const x0=cx*CH,y0=cy*CH; setIso(c); const e=.03;
       for(let y=y0;y<y0+CH;y++)for(let x=x0;x<x0+CH;x++){const i=y*N+x; if(isWater(i))continue; if((G.tr[i]===code)||(code===0&&G.tr[i]===0)){c.rect(x-e,y-e,1+2*e,1+2*e); any=true;}}
       if(any){const p=SOIL_PAT(code); patT(p,32); c.fillStyle=p; c.fill();}}
     if(!S.ul[cy*NC+cx]){patT(PAT.lock,32); c.globalAlpha=.55; c.fillStyle=PAT.lock; c.fillRect(x0-e,y0-e,CH+2*e,CH+2*e); c.globalAlpha=1;}
+    c.save(); c.beginPath(); c.rect(x0-e,y0-e,CH+2*e,CH+2*e); c.clip(); shadeRect(c,x0-1,y0-1,CH+3,CH+3); c.restore(); setIso(c);
     c.globalCompositeOperation='destination-out'; c.fillStyle='#000'; c.beginPath(); let wat=false;
     for(let y=y0-1;y<=y0+CH;y++)for(let x=x0-1;x<=x0+CH;x++){if(inMap(x,y)&&isWater(y*N+x)){c.rect(x,y,1,1); wat=true;}}
     if(wat)c.fill(); c.globalCompositeOperation='source-over';
@@ -125,7 +126,17 @@ function bakeGroups(cx,cy,rs,night){const items=ckItems(cx,cy), m=new Map();
     for(const it of gr.items){const q=itemBox(it); bb[0]=Math.min(bb[0],q[0]); bb[1]=Math.min(bb[1],q[1]); bb[2]=Math.max(bb[2],q[2]); bb[3]=Math.max(bb[3],q[3]);}
     gr.bb=bb; gr.day=mkLayer(bb[0]-1,bb[1]-1,bb[2]+1,bb[3]+1,rs,c=>{for(const it of gr.items)drawItem(c,it,0);}); gr.night=null; gr.rs=rs;}
   return out;}
-function groupNight(gr){if(!gr.night)gr.night=mkLayer(gr.bb[0]-1,gr.bb[1]-1,gr.bb[2]+1,gr.bb[3]+1,gr.rs,c=>{for(const it of gr.items)drawItem(c,it,1);}); return gr.night;}
+// noite: morros desenhados de dia e escurecidos de uma vez (sem emenda entre quadrados); o resto usa a versão noturna
+let NSCR=null;
+function groupNight(gr){if(gr.night)return gr.night;
+  gr.night=mkLayer(gr.bb[0]-1,gr.bb[1]-1,gr.bb[2]+1,gr.bb[3]+1,gr.rs,c=>{const w=c.canvas.width,h=c.canvas.height;
+    if(!NSCR)NSCR=document.createElement('canvas'); if(NSCR.width<w||NSCR.height<h){NSCR.width=Math.max(NSCR.width,w); NSCR.height=Math.max(NSCR.height,h);}
+    const s=NSCR.getContext('2d'); let run=false;
+    const flush=()=>{if(!run)return; s.setTransform(1,0,0,1,0,0); s.globalCompositeOperation='source-atop'; s.fillStyle='rgba(8,16,48,.58)'; s.fillRect(0,0,w,h); s.globalCompositeOperation='source-over';
+      c.setTransform(1,0,0,1,0,0); c.drawImage(NSCR,0,0,w,h,0,0,w,h); run=false;};
+    for(const it of gr.items){if(it.t===0){if(!run){s.setTransform(1,0,0,1,0,0); s.clearRect(0,0,w,h); run=true;} drawItem(s,it,0);} else{flush(); drawItem(c,it,1);}}
+    flush();});
+  return gr.night;}
 
 /* ---- gerenciamento ---- */
 function ckFree(e){for(const k of ['base','foam','pud','lg','lh'])freeLayer(e[k]); if(e.groups)for(const gr of e.groups){freeLayer(gr.day); freeLayer(gr.night);}}

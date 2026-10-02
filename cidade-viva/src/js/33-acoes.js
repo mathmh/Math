@@ -158,7 +158,7 @@ function applyTool(tool,x,y,opt){const why=toolCheck(tool,x,y,opt); if(why)retur
     case 'plantar':G.ob[i]=G.ht[i]>0||Math.random()<.4?2:1; break;}
   if(cc.c)gainXp(Math.max(1,Math.round(cc.c/30)));
   puff(x+.5,y+.5); mapVer++; after(); return '';}
-function snowFix(i){if(G.ht[i]>=4&&G.tr[i]===0)G.tr[i]=6; else if(G.ht[i]<4&&G.tr[i]===6)G.tr[i]=0;}
+function snowFix(i){if(G.ht[i]<4&&G.tr[i]===6)G.tr[i]=0;} // a neve do alto vem em degradê no sombreado
 function clearQ(x,y){for(const [a,b] of [[0,0],[1,0],[0,1],[1,1]]){const qi=(y*2+b)*Q2+x*2+a; G.pv[qi]=0; G.fc[qi]=0;}}
 // troca o modelo de uma ponte inteira (todos os trechos ligados)
 function bridgeSpan(x,y){const out=[],seen=new Set([y*N+x]),q=[[x,y]]; while(q.length){const [a,b]=q.pop(); out.push([a,b]); for(const [dx,dy] of DIRS4){const X=a+dx,Y=b+dy,i=Y*N+X; if(inMap(X,Y)&&!seen.has(i)&&G.rd[i]===2){seen.add(i);q.push([X,Y]);}}} return out;}

@@ -79,24 +79,60 @@ const LUZ=(()=>{const v=[-1,-.45,1.35],l=Math.hypot(...v); return v.map(a=>a/l);
 function slopeLight(A,B){const nx=-A/38,ny=-B/38, l=Math.hypot(nx,ny,1); return ((nx*LUZ[0]+ny*LUZ[1]+LUZ[2])/l)/LUZ[2];}
 /* ---- Colunas de relevo (paredes e topo de cada quadrado elevado) ---- */
 const CLIFF={0:'#8a7356',3:'#c9b07a',4:'#c79a5a',5:'#7d5a3a',6:'#9aa3ab',7:'#74777d'};
+// Sombreado suave do relevo: cada canto de quadrado guarda a média da luz das encostas que se encontram nele.
+// Os valores ficam em duas imagens pequenas (escurecer e clarear, 1 pixel por canto) que o desenho estica com
+// interpolação, então a luz muda em degradê contínuo de um quadrado para o outro, sem bordas.
+const SHD={v:-1,dk:null,lt:null};
+const LCORN=[[0,0],[1,0],[1,1],[0,1]];
+function vertexLight(X,Y){const T4=[[X-1,Y-1,2],[X,Y-1,3],[X-1,Y,1],[X,Y,0]]; let zt=-1e9, sum=0, n=0;
+  for(const [x,y,k] of T4)if(inMap(x,y)){const z=cornerZ(x,y)[k]; if(z>zt)zt=z;}
+  for(const [x,y,k] of T4){if(!inMap(x,y)||cornerZ(x,y)[k]!==zt)continue; const lc=LCORN[k];
+    for(const q of tilePlanes(x,y)){if(q.tri&&!q.tri.some(t=>t[0]===lc[0]&&t[1]===lc[1]))continue; sum+=slopeLight(q.A,q.B); n++;}}
+  return [n?sum/n:1,zt];}
+function shadeMaps(){if(SHD.v===mapVer&&SHD.dk)return SHD; const M=N+1;
+  if(!SHD.dk)for(const k of ['dk','lt','sn']){SHD[k]=document.createElement('canvas'); SHD[k].width=SHD[k].height=M;}
+  const R=new Float32Array(M*M), Z=new Float32Array(M*M);
+  for(let Y=0;Y<M;Y++)for(let X=0;X<M;X++){const [r,z]=vertexLight(X,Y); R[Y*M+X]=r; Z[Y*M+X]=z/HZ;}
+  const im={}; for(const k of ['dk','lt','sn'])im[k]=SHD[k].getContext('2d').createImageData(M,M);
+  for(let Y=0;Y<M;Y++)for(let X=0;X<M;X++){const v=Y*M+X, j=v*4, r=R[v], z=Z[v];
+    // curvatura: pé de encosta (côncavo) escurece um pouco, crista (convexo) clareia
+    let sz=0,n=0; for(const [a,b] of [[1,0],[-1,0],[0,1],[0,-1]]){const XX=X+a,YY=Y+b; if(XX<0||YY<0||XX>=M||YY>=M)continue; sz+=Z[YY*M+XX]; n++;}
+    const cv=n?sz/n-z:0;
+    const d=clamp((1-r)*2.3+Math.max(0,cv)*.2,0,.52), l=clamp((r-1)*2.1+Math.max(0,-cv)*.16,0,.38)+clamp(z,0,4)*.025;
+    const sn=clamp(z-3.2+((hsh(X,Y,41)%100)/100-.5)*.8,0,1)*.88;
+    const A=im.dk.data, B=im.lt.data, C=im.sn.data;
+    A[j]=22; A[j+1]=30; A[j+2]=44; A[j+3]=Math.round(d*255);
+    B[j]=255; B[j+1]=248; B[j+2]=212; B[j+3]=Math.round(l*255);
+    C[j]=238; C[j+1]=244; C[j+2]=250; C[j+3]=Math.round(sn*255);}
+  for(const k of ['dk','lt','sn'])SHD[k].getContext('2d').putImageData(im[k],0,0); SHD.v=mapVer; return SHD;}
+// aplica o sombreado (só onde já tem pintura) no retângulo de cantos [sx,sx+w]×[sy,sy+h], com a transformação atual do plano
+function shadeRect(c,sx,sy,w,h){const m=shadeMaps(), M=N+1, x0=Math.max(0,sx),y0=Math.max(0,sy),x1=Math.min(M,sx+w),y1=Math.min(M,sy+h); if(x1<=x0||y1<=y0)return;
+  c.globalCompositeOperation='source-atop'; c.imageSmoothingEnabled=true; c.imageSmoothingQuality='low';
+  for(const im of [m.sn,m.dk,m.lt])c.drawImage(im,x0,y0,x1-x0,y1-y0,x0-.5,y0-.5,x1-x0,y1-y0);
+  c.globalCompositeOperation='source-over';}
+// solo já com a textura de "área não comprada" por cima (uma pintura só, sem emenda entre quadrados)
+const LPAT={};
+function lockPat(tr){if(LPAT[tr])return LPAT[tr]; const cv=document.createElement('canvas'); cv.width=cv.height=64; const c=cv.getContext('2d');
+  const p=SOIL_PAT(tr); p.setTransform(new DOMMatrix()); c.fillStyle=p; c.fillRect(0,0,64,64);
+  PAT.lock.setTransform(new DOMMatrix()); c.globalAlpha=.55; c.fillStyle=PAT.lock; c.fillRect(0,0,64,64);
+  return LPAT[tr]=g.createPattern(cv,'repeat');}
+function cliffFace(c,pts,top,bot){const ys=pts.map(p=>p[1]), y0=Math.min(...ys), y1=Math.max(...ys);
+  const gr=c.createLinearGradient(0,y0,0,y1); gr.addColorStop(0,top); gr.addColorStop(1,bot); poly(c,pts,gr);}
 function drawColumn(c,x,y,n){const i=y*N+x, cz=cornerZ(x,y), tr=G.tr[i];
   const nbz=(X,Y)=>inMap(X,Y)?((G.tr[Y*N+X]===1||G.tr[Y*N+X]===2)?[0,0,0,0]:cornerZ(X,Y)):[-20,-20,-20,-20];
-  const col=CLIFF[tr]||'#8a7356', dark=nc(sh(col,.62),n), mid=nc(sh(col,.82),n);
+  const col=CLIFF[tr]||'#8a7356';
   setW(c); const r=nbz(x+1,y); // face direita
-  if(cz[1]>r[0]||cz[2]>r[3]){poly(c,[P(x+1,y,cz[1]),P(x+1,y+1,cz[2]),P(x+1,y+1,r[3]),P(x+1,y,r[0])],dark); line(c,P(x+1,y,cz[1]),P(x+1,y+1,cz[2]),'rgba(255,255,255,.12)',1);
-    for(let z=Math.min(r[0],r[3])+5;z<Math.max(cz[1],cz[2])-2;z+=5){const za=Math.min(z,cz[1]),zb=Math.min(z,cz[2]); if(za>r[0]&&zb>r[3])line(c,P(x+1,y,za),P(x+1,y+1,zb),'rgba(0,0,0,.08)',1);}}
+  if(cz[1]>r[0]||cz[2]>r[3]){cliffFace(c,[P(x+1,y,cz[1]),P(x+1,y+1,cz[2]),P(x+1,y+1,r[3]),P(x+1,y,r[0])],nc(sh(col,.72),n),nc(sh(col,.46),n));
+    line(c,P(x+1,y,cz[1]),P(x+1,y+1,cz[2]),'rgba(255,255,255,.1)',1);
+    for(let z=Math.min(r[0],r[3])+5;z<Math.max(cz[1],cz[2])-2;z+=5){const za=Math.min(z,cz[1]),zb=Math.min(z,cz[2]); if(za>r[0]&&zb>r[3])line(c,P(x+1,y,za),P(x+1,y+1,zb),'rgba(0,0,0,.07)',1);}}
   const l=nbz(x,y+1); // face esquerda
-  if(cz[3]>l[0]||cz[2]>l[1]){poly(c,[P(x,y+1,cz[3]),P(x+1,y+1,cz[2]),P(x+1,y+1,l[1]),P(x,y+1,l[0])],mid);
-    for(let z=Math.min(l[0],l[1])+5;z<Math.max(cz[3],cz[2])-2;z+=5){const za=Math.min(z,cz[3]),zb=Math.min(z,cz[2]); if(za>l[0]&&zb>l[1])line(c,P(x,y+1,za),P(x+1,y+1,zb),'rgba(0,0,0,.07)',1);}}
-  const pl=tilePlanes(x,y), pat=SOIL_PAT(tr), lock=!isUl(x,y);
-  const each=fn=>{for(let k=0;k<pl.length;k++){const q=pl[k]; setIsoPlane(c,x,y,q.zc,q.A,q.B);
-    if(k>0){c.save(); c.beginPath(); const t=q.tri; c.moveTo(x+t[0][0],y+t[0][1]); c.lineTo(x+t[1][0],y+t[1][1]); c.lineTo(x+t[2][0],y+t[2][1]); c.closePath(); c.clip();}
-    fn(q); if(k>0)c.restore();}};
-  each(q=>{patT(pat,32); c.fillStyle=pat; const e=q.tri?0:.015; c.fillRect(x-e,y-e,1+2*e,1+2*e); const r=slopeLight(q.A,q.B);
-    if(r<.99){c.fillStyle='rgba(28,22,10,'+Math.min(.42,(1-r)*.62).toFixed(3)+')'; c.fillRect(x,y,1,1);}
-    else if(r>1.01){c.fillStyle='rgba(255,250,215,'+Math.min(.26,(r-1)*.75).toFixed(3)+')'; c.fillRect(x,y,1,1);}
-    if(G.ht[i]&&tr!==6){c.fillStyle='rgba(255,250,215,'+(G.ht[i]*.03).toFixed(3)+')'; c.fillRect(x,y,1,1);}
-    if(lock){patT(PAT.lock,32); c.globalAlpha=.55; c.fillStyle=PAT.lock; c.fillRect(x,y,1,1); c.globalAlpha=1;}});
+  if(cz[3]>l[0]||cz[2]>l[1]){cliffFace(c,[P(x,y+1,cz[3]),P(x+1,y+1,cz[2]),P(x+1,y+1,l[1]),P(x,y+1,l[0])],nc(sh(col,.9),n),nc(sh(col,.64),n));
+    for(let z=Math.min(l[0],l[1])+5;z<Math.max(cz[3],cz[2])-2;z+=5){const za=Math.min(z,cz[3]),zb=Math.min(z,cz[2]); if(za>l[0]&&zb>l[1])line(c,P(x,y+1,za),P(x+1,y+1,zb),'rgba(0,0,0,.06)',1);}}
+  const pl=tilePlanes(x,y), pat=isUl(x,y)?SOIL_PAT(tr):lockPat(tr);
+  for(const q of pl){setIsoPlane(c,x,y,q.zc,q.A,q.B); c.save(); c.beginPath();
+    if(q.tri){const t=q.tri, mx=(t[0][0]+t[1][0]+t[2][0])/3, my=(t[0][1]+t[1][1]+t[2][1])/3;
+      t.forEach((v,k)=>{const px=x+mx+(v[0]-mx)*1.05, py=y+my+(v[1]-my)*1.05; k?c.lineTo(px,py):c.moveTo(px,py);}); c.closePath();}
+    else c.rect(x-.02,y-.02,1.04,1.04);
+    c.clip(); patT(pat,32); c.fillStyle=pat; c.fillRect(x-1,y-1,3,3); shadeRect(c,x-1,y-1,4,4); c.restore();}
   setIsoTile(c,x,y); tileTop(c,x,y);
-  if(n>0)each(()=>{c.fillStyle='rgba(8,16,48,'+(.58*n).toFixed(3)+')'; c.fillRect(x,y,1,1);});
   setW(c);}

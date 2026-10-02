@@ -45,6 +45,10 @@ O script junta `src/head.html` (HTML e CSS), todos os arquivos `src/js/*.js` em 
 2. Em `42-arte-predios-novos.js`: `ART.meuDesenho=(c,t,a,v)=>{ ... }`.
 3. O `slug` é o nome do PNG na oficina de imagens (`nome-do-arquivo.png` e `nome-do-arquivo-noite.png`).
 
+## Relevo
+
+As montanhas são geradas pelas alturas dos cantos de cada quadrado, e cantos vizinhos diferem no máximo 1 nível. Assim cada quadrado vira plano, rampa ou canto, e as encostas emendam sem degraus. Paredão só existe na boca do túnel. A luz é calculada por canto e esticada em degradê (`shadeMaps` em `52-chao-ruas-relevo.js`), e a neve dos picos entra pelo mesmo degradê. À noite, os morros de cada fatia escurecem de uma vez, sem emenda entre quadrados. Saves antigos ganham o relevo novo só nas áreas ainda não compradas (`refreshTerrain`).
+
 ## Desempenho
 
 O chão, as ruas, as calçadas, os morros, as cercas, as árvores e os postes viram imagens prontas por pedaço do mapa (8×8 quadrados) e só são refeitos quando aquele pedaço muda. Carros, trem, pessoas, bichos e aviões viram sprites prontos por ângulo e quadro de animação. Cada quadro é só uma lista de imagens, desenhada pelo PixiJS (WebGL) ou, como reserva, pelo Canvas 2D.
