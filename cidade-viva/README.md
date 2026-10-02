@@ -57,6 +57,6 @@ No celular, o modo econômico liga sozinho: resolução menor, 30 quadros por se
 
 ## Android (Capacitor) e PWA
 
-- Para funcionar sem internet, baixe `pixi.min.js` 7.4.2 para junto do `index.html` e troque o `src` do `<script>` em `src/head.html` por `pixi.min.js`.
-- Capacitor: `npm i @capacitor/core @capacitor/cli @capacitor/android`, `npx cap init "Cidade Viva" br.cidadeviva.app --web-dir=www`, copie `index.html` e `pixi.min.js` para `www/`, depois `npx cap add android` e `npx cap open android`.
+- A pasta `app-www/` é o jogo pronto para o app: o `node build.js` gera ali um `index.html` que usa o `pixi.min.js` da própria pasta, então funciona sem internet.
+- Capacitor: `npm i @capacitor/core @capacitor/cli @capacitor/android`, `npx cap init "Cidade Viva" br.cidadeviva.app --web-dir=www`, copie o conteúdo de `app-www/` para `www/`, depois `npx cap add android` e `npx cap open android`.
 - O save fica no `localStorage`; fora do claude.ai não existe o salvamento na conta, então use Menu → Backup para guardar o arquivo.
