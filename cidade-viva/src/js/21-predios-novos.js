@@ -31,6 +31,14 @@ defN('mural',{cat:'deco',excl:'pedido',name:'Mural de Grafite',slug:'mural-de-gr
 defN('parquinho',{cat:'fun',excl:'pedido',name:'Parquinho',slug:'parquinho',lv:1,cost:900,w:2,h:2,serve:{fun:4},art:{f:'playground'}});
 defN('bebedouro',{cat:'deco',excl:'pedido',name:'Bebedouro',slug:'bebedouro',lv:1,cost:200,bonus:3,art:{f:'drinker'}});
 defN('quiosque',{cat:'deco',excl:'pedido',name:'Quiosque de Coco',slug:'quiosque-de-coco',lv:1,cost:600,bonus:5,tour:1,art:{f:'kiosk'}});
+// enfeites novos (imagens do sprite sheet de decoração; o desenho em código é só reserva)
+defN('lixeira',{cat:'deco',name:'Lixeira',slug:'lixeira',lv:1,cost:40,bonus:1,art:{f:'hydrant'}});
+defN('vaso',{cat:'deco',name:'Vaso de Plantas',slug:'vaso-de-plantas',lv:1,cost:50,bonus:1,art:{f:'flowers'}});
+defN('correio',{cat:'deco',name:'Caixa de Correio',slug:'caixa-de-correio',lv:2,cost:60,bonus:1,art:{f:'hydrant'}});
+defN('placa',{cat:'deco',name:'Placa de Direção',slug:'placa-de-direcao',lv:2,cost:80,bonus:1,art:{f:'lamp'}});
+defN('cerca-viva',{cat:'deco',name:'Cerca Viva',slug:'cerca-viva',lv:3,cost:120,bonus:2,art:{f:'flowers'}});
+defN('ponto-onibus',{cat:'deco',name:'Ponto de Ônibus',slug:'ponto-de-onibus',lv:4,cost:500,bonus:4,art:{f:'bench'}});
+defN('relogio',{cat:'deco',name:'Relógio de Praça',slug:'relogio-de-praca',lv:6,cost:900,bonus:5,art:{f:'lamp'}});
 defN('banco-mosaico',{cat:'deco',excl:'pedido',name:'Banco de Mosaico',slug:'banco-de-mosaico',lv:1,cost:350,bonus:4,art:{f:'mosaic'}});
 // ajustes nos antigos
 T.bombeiros.fireR=10; T.siderurgica.rec2={in:{ore:2,lime:1},out:{steel:5},c:60,t:120};

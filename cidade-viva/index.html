@@ -197,6 +197,7 @@ canvas.chart{width:100%;height:auto;display:block;margin-top:4px;touch-action:pa
 
 /* trilho lateral, barra de pincéis, visão, evento */
 .rail{position:absolute;right:8px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:8px;z-index:5}
+.rb[data-g="enfeite"]{letter-spacing:-.4px}
 .rb{border:0;width:58px;border-radius:16px;padding:6px 2px 4px;background:var(--panel);box-shadow:0 4px 0 var(--line),0 8px 16px rgba(0,0,0,.18);display:flex;flex-direction:column;align-items:center;gap:0;font-weight:700;font-size:11.5px;cursor:pointer;line-height:1.1}
 .rb svg{width:28px;height:28px}.rb:active{transform:translateY(3px)}.rb.on{background:var(--sky);color:#fff}
 .toolbar{position:absolute;left:50%;bottom:8px;transform:translateX(-50%);z-index:6;background:var(--panel);border-radius:18px;padding:8px 8px 9px;width:min(720px,calc(100% - 12px));box-shadow:0 4px 0 var(--line),0 10px 24px rgba(0,0,0,.25)}
@@ -222,7 +223,7 @@ canvas.chart{width:100%;height:auto;display:block;margin-top:4px;touch-action:pa
 .colit{display:flex;flex-wrap:wrap;gap:5px;margin:6px 0}.colit span{border-radius:999px;padding:2px 9px 0;font-size:12.5px;font-weight:700;background:var(--panel);color:var(--muted);border:1px dashed var(--line)}.colit span.got{background:#ffe58a;color:#3b2a00;border-style:solid;border-color:#e0a400}
 #app.tb .toasts{bottom:200px}
 small.setl{display:block;color:#b5523b;font-weight:700}
-@media (max-width:420px){.rail{right:5px;gap:6px}.rb{width:50px;font-size:10.5px}.rb svg{width:24px;height:24px}.stats b{font-size:15px}.evban{top:auto;bottom:84px;max-width:calc(100% - 20px)}.viewbar{right:60px}}
+@media (max-width:420px){.rail{right:5px;gap:6px}.rb{width:50px;font-size:10.5px}.rb[data-g="enfeite"]{font-size:9.4px;letter-spacing:-.3px}.rb svg{width:24px;height:24px}.stats b{font-size:15px}.evban{top:auto;bottom:84px;max-width:calc(100% - 20px)}.viewbar{right:60px}}
 </style>
 </head>
 <body>
@@ -246,7 +247,7 @@ small.setl{display:block;color:#b5523b;font-weight:700}
   <div class="rail" id="rail">
     <button class="rb" data-g="ruas"><svg viewBox="0 0 32 32"><path d="M16 3l13 13-13 13L3 16z" fill="#636b74"/><path d="M9.5 9.5l13 13" stroke="#f1ecdc" stroke-width="2" stroke-dasharray="3 3"/></svg>Ruas</button>
     <button class="rb" data-g="terreno"><svg viewBox="0 0 32 32"><path d="M2 27l9-14 5 7 5-11 9 18z" fill="#8a7356"/><path d="M21 9l3.5 7-3.5-2-3 3z" fill="#f2f5f7"/><path d="M2 27h28" stroke="#5f8a46" stroke-width="3"/></svg>Terreno</button>
-    <button class="rb" data-g="enfeite"><svg viewBox="0 0 32 32"><rect x="3" y="14" width="26" height="9" rx="4" fill="#3f8f3a"/><rect x="5" y="11" width="22" height="5" rx="2.5" fill="#5fb24f"/><path d="M3 27h26" stroke="#d9d2c4" stroke-width="3"/></svg>Enfeitar</button>
+    <button class="rb" data-g="enfeite"><svg viewBox="0 0 32 32"><rect x="3" y="14" width="26" height="9" rx="4" fill="#3f8f3a"/><rect x="5" y="11" width="22" height="5" rx="2.5" fill="#5fb24f"/><path d="M3 27h26" stroke="#d9d2c4" stroke-width="3"/></svg>Decoração</button>
     <button class="rb" id="rView"><svg viewBox="0 0 32 32"><path d="M2 16s5-9 14-9 14 9 14 9-5 9-14 9S2 16 2 16z" fill="#fff" stroke="#2b6cb0" stroke-width="2.2"/><circle cx="16" cy="16" r="5" fill="#2b6cb0"/></svg>Visão</button>
     <button class="rb" id="rExp"><svg viewBox="0 0 32 32"><path d="M16 3l13 13-13 13L3 16z" fill="#8cc56b" stroke="#2f6b2a" stroke-width="2.2" stroke-linejoin="round"/><path d="M16 10v12M10 16h12" stroke="#fff" stroke-width="3" stroke-linecap="round"/></svg>Expandir</button>
   </div>
@@ -271,7 +272,7 @@ small.setl{display:block;color:#b5523b;font-weight:700}
 'use strict';
 /* ---- 10-base.js ---- */
 /* ================= Constantes ================= */
-const TW=64, TH=32, N=64, CH=8, NC=8, SS=2;
+const TW=64, TH=32, N=84, CH=12, NC=7, SS=2;
 const SAVE_KEY='cidadeviva_save_v2', OLD_KEY='cidadeviva_save_v1', ART_KEY='cidadeviva_art_v1', OPT_KEY='cidadeviva_opts_v1';
 const $=s=>document.querySelector(s);
 const fmtN=n=>Math.floor(n).toLocaleString('pt-BR');
@@ -492,6 +493,14 @@ defN('mural',{cat:'deco',excl:'pedido',name:'Mural de Grafite',slug:'mural-de-gr
 defN('parquinho',{cat:'fun',excl:'pedido',name:'Parquinho',slug:'parquinho',lv:1,cost:900,w:2,h:2,serve:{fun:4},art:{f:'playground'}});
 defN('bebedouro',{cat:'deco',excl:'pedido',name:'Bebedouro',slug:'bebedouro',lv:1,cost:200,bonus:3,art:{f:'drinker'}});
 defN('quiosque',{cat:'deco',excl:'pedido',name:'Quiosque de Coco',slug:'quiosque-de-coco',lv:1,cost:600,bonus:5,tour:1,art:{f:'kiosk'}});
+// enfeites novos (imagens do sprite sheet de decoração; o desenho em código é só reserva)
+defN('lixeira',{cat:'deco',name:'Lixeira',slug:'lixeira',lv:1,cost:40,bonus:1,art:{f:'hydrant'}});
+defN('vaso',{cat:'deco',name:'Vaso de Plantas',slug:'vaso-de-plantas',lv:1,cost:50,bonus:1,art:{f:'flowers'}});
+defN('correio',{cat:'deco',name:'Caixa de Correio',slug:'caixa-de-correio',lv:2,cost:60,bonus:1,art:{f:'hydrant'}});
+defN('placa',{cat:'deco',name:'Placa de Direção',slug:'placa-de-direcao',lv:2,cost:80,bonus:1,art:{f:'lamp'}});
+defN('cerca-viva',{cat:'deco',name:'Cerca Viva',slug:'cerca-viva',lv:3,cost:120,bonus:2,art:{f:'flowers'}});
+defN('ponto-onibus',{cat:'deco',name:'Ponto de Ônibus',slug:'ponto-de-onibus',lv:4,cost:500,bonus:4,art:{f:'bench'}});
+defN('relogio',{cat:'deco',name:'Relógio de Praça',slug:'relogio-de-praca',lv:6,cost:900,bonus:5,art:{f:'lamp'}});
 defN('banco-mosaico',{cat:'deco',excl:'pedido',name:'Banco de Mosaico',slug:'banco-de-mosaico',lv:1,cost:350,bonus:4,art:{f:'mosaic'}});
 // ajustes nos antigos
 T.bombeiros.fireR=10; T.siderurgica.rec2={in:{ore:2,lime:1},out:{steel:5},c:60,t:120};
@@ -628,7 +637,7 @@ const TOOLS={
   muro:{g:'enfeite',name:'Muros e cercas',lv:2,cost:8,desc:'Cerca viva, muros e grades.',opt:'fence',q:1},
   apagar:{g:'enfeite',name:'Apagar',lv:1,cost:0,desc:'Tira calçadas e cercas.',q:1},
 };
-const TOOL_GROUPS={ruas:'Ruas e trilhos',terreno:'Terreno',enfeite:'Enfeitar'};
+const TOOL_GROUPS={ruas:'Ruas e trilhos',terreno:'Terreno',enfeite:'Decoração'};
 const BRIDGES=[{name:'Pedra em arcos',lv:2,c:150,mat:{stone:2}},{name:'Madeira',lv:2,c:100,mat:{wood:2}},{name:'Concreto',lv:8,c:200,mat:{stone:1,steel:1}},
   {name:'Metálica',lv:9,c:250,mat:{steel:2}},{name:'Pênsil',lv:14,c:400,mat:{steel:2,tools:1}}];
 const SOILS=[[0,'Grama','#86bf65'],[3,'Areia','#ead9a6'],[4,'Deserto','#e3b877'],[5,'Terra','#a07a52'],[6,'Neve','#f2f5f7'],[7,'Rocha','#8d9096']];
@@ -716,59 +725,75 @@ function pvNear(b,r){let n=0; const w=fw(b),h=fh(b); for(let y=Math.max(0,(b.y-r
 /* ================= Mapa ================= */
 // tr: 0 grama, 1 água, 2 mar, 3 areia de praia, 4 deserto, 5 terra, 6 neve · ht: nível 0-4 · rp: rampa (1-4 = direção que sobe)
 // rd: 0 nada, 1 rua, 2 ponte · bm: modelo da ponte · rl: 1 trilho · ob: obstáculo · pv/fc: calçadas e cercas (grade de 1/4 de quadrado)
-const START_CH=[[2,2],[3,2],[2,3],[3,3]], HZ=13, Q2=N*2;
-// túnel do trem: TUN é o primeiro trilho fora da montanha; o portal fica na encosta logo a oeste
-const TUN={x:16,y:17}, PORTAL={x:15,y:17};
-function riverY(xx){return 26.8+2.6*Math.sin((xx-6)*0.13)+0.7*Math.sin(xx*0.41+0.4)+(xx>38?(xx-38)*0.18:0);}
-// ruído suave (value noise) para relevo natural
+// área inicial: 2×2 áreas de 12×12 no meio do mapa (quadrados 36..59)
+const START_CH=[[3,3],[4,3],[3,4],[4,4]], HZ=13, Q2=N*2;
+// túnel do trem: o portal (imagem de morro com boca de pedra) fica a oeste da área inicial; TUN é o primeiro trilho fora dele
+const TUN={x:36,y:38}, PORTAL={x:35,y:38};
+const PORTAL_LOTE={x:33,y:37,w:3,h:3};
+// ruído suave (value noise)
 function vnoise(seed){const h=(x,y)=>(hsh(x+seed*7,y-seed*3,seed+11)%10007)/10007;
   return (x,y)=>{const xi=Math.floor(x),yi=Math.floor(y),fx=x-xi,fy=y-yi,sx=fx*fx*(3-2*fx),sy=fy*fy*(3-2*fy);
     const a=h(xi,yi),b=h(xi+1,yi),c=h(xi,yi+1),d=h(xi+1,yi+1); return a+(b-a)*sx+(c-a)*sy+(a-b-c+d)*sx*sy;};}
-const inStart=(x,y)=>x>=16&&x<32&&y>=16&&y<32;
-const nearPortal=(x,y)=>x>=14&&x<=16&&y>=16&&y<=18;
-/* Relevo em platôs (estilo serra): chão no nível 0, platô baixo A (nível 3) colado na cidade, platô alto B (nível 6)
-   atrás dele e a serra de picos no fundo do mapa (só enfeite, não dá para construir). As bordas são paredões de rocha.
-   As ruas já vêm prontas: A sobe por uma rampa colada no paredão sul; B por uma estrada na encosta leste. */
-const LV_A=3, LV_B=6, LV_P=7;
-function peakZone(x,y){return (y<=2&&x<=28)||(x<=2&&y<=23)||(x+y<=10);}
-function plateauShape(seed){const nz=vnoise(seed+303), n=(t,k)=>Math.round((nz(t*.33,k*7.3)-.5)*3.2);
-  const bS=x=>x>=10&&x<=22?9:clamp(9+n(x,1),8,10);          // última linha do platô B (sul)
-  const bE=y=>clamp(21+n(y,2),20,21);                       // última coluna de B (leste); a estrada fica em x=22
-  const aE=y=>y>=13?15:clamp(14+n(y,3),13,15);              // última coluna de A (leste): paredão do túnel em x=15
-  const aS=x=>x>=12?21:clamp(21+n(x,4),20,22);              // última linha de A (sul): a rampa corre na borda
-  const inB=(x,y)=>!peakZone(x,y)&&x>=3&&y>=3&&x<=bE(y)&&y<=bS(x);
-  const inA=(x,y)=>!peakZone(x,y)&&!inB(x,y)&&x>=3&&x<=aE(y)&&y>bS(x)&&y<=aS(x);
-  return {inA,inB,bS};}
-// ruas prontas: [x,y,nível,rampa]
+const inStart=(x,y)=>x>=36&&x<60&&y>=36&&y<60;
+const inLote=(L,x,y)=>x>=L.x&&x<L.x+L.w&&y>=L.y&&y<L.y+L.h;
+const nearPortal=(x,y)=>inLote(PORTAL_LOTE,x,y)||(x>=36&&x<=37&&y===TUN.y);
+/* Mapa fixo (o mesmo em todo jogo novo), desenhado a partir da imagem de referência:
+   - serra no fundo (bordas de cima): só paisagem, picos e cordilheiras em imagem, neblina; não dá para construir;
+   - platô alto P1 (nível 6) e platô baixo P2 (nível 3), cada um com 16×16 planos, paredões de rocha;
+   - rio que nasce numa cachoeira na serra, passa entre os platôs e desce até o mar; lago com ilhota à esquerda;
+   - deserto no canto esquerdo com o arco de pedra; mar e praia na borda da direita, com pedras na água;
+   - ruas prontas subindo aos dois platôs (com ponte sobre o rio). */
+const LV_P1=6, LV_P2=3;
+const P1={x:12,y:9,w:16,h:16}, P2={x:46,y:8,w:16,h:16};
+const ARCO={x:8,y:71,w:4,h:3};
+function serraZone(x,y){return (y<=6&&x<=76)||(x<=6&&y<=50)||(x+y<=16)||(x>=64&&y<=22)||(x>=71&&y<=27);}
+function peakZone(x,y){return serraZone(x,y)||inLote(ARCO,x,y)||inLote(PORTAL_LOTE,x,y);}
+function coastX(y){const c=77.5+1.6*Math.sin(y*.21+.7)+1.1*Math.sin(y*.071+2.1); return y<24?99:y<30?c+(30-y)*1.5:c;}
+const RIVER=[[36,4],[37,10],[36,17],[38,24],[42,29],[50,30.5],[58,29.5],[64,31],[69,35],[74,39],[80,41],[86,42]];
+function riverDist(x,y){let best=99; for(let k=0;k+1<RIVER.length;k++){const [ax,ay]=RIVER[k],[bx,by]=RIVER[k+1]; const dx=bx-ax,dy=by-ay, t=clamp(((x-ax)*dx+(y-ay)*dy)/(dx*dx+dy*dy),0,1);
+  best=Math.min(best,Math.hypot(x-ax-dx*t,y-ay-dy*t));} return best;}
+const LAGO={x:13,y:47,rx:7.2,ry:5.6};
+function lakeV(x,y){const a=Math.atan2(y-LAGO.y,x-LAGO.x), r=1+.1*Math.sin(a*3+1)+.06*Math.sin(a*5); const dx=(x-LAGO.x)/LAGO.rx, dy=(y-LAGO.y)/LAGO.ry; return Math.hypot(dx,dy)/r;}
+// ruas prontas: [x,y,nível,rampa]  (rampa 3 = sobe para oeste, 4 = sobe para norte)
 function presetRoads(){const out=[], add=(x,y,h,r)=>out.push([x,y,h,r||0]);
-  // A: rampa subindo para oeste na borda sul (sai da rua principal em x=16), depois rua norte-sul em x=12
-  add(15,21,0,3); add(14,21,1,3); add(13,21,2,3); for(let y=10;y<=21;y++)add(12,y,LV_A);
-  // B: rua no chão saindo da coluna x=27, estrada subindo para o norte colada no paredão leste e rua no alto
-  for(let x=23;x<=27;x++)add(x,15,0); for(let y=10;y<=15;y++)add(22,y,0);
-  for(let k=0;k<6;k++)add(22,9-k,k,4);
-  for(let x=12;x<=22;x++)add(x,3,LV_B); for(let y=4;y<=9;y++)add(12,y,LV_B);
+  // P2 (nível 3): sai da avenida x=47, cruza o rio por ponte, sobe pela rampa na frente do paredão
+  for(let y=24;y<=35;y++)add(47,y,0); add(47,26,0,4); add(47,25,1,4); add(47,24,2,4); for(let y=15;y<=23;y++)add(47,y,LV_P2);
+  // P1 (nível 6): sai da rua y=41 para oeste, sobe para o norte e encosta no paredão da frente do P1
+  for(let x=30;x<=35;x++)add(x,41,0); for(let y=33;y<=40;y++)add(30,y,0); for(let x=21;x<=29;x++)add(x,33,0); for(let y=31;y<=33;y++)add(20,y,0);
+  for(let k=0;k<6;k++)add(20,30-k,k,4); for(let y=16;y<=24;y++)add(20,y,LV_P1);
   return out;}
 function genTerrain(seed){const tr=new Uint8Array(N*N), ht=new Uint8Array(N*N), rp=new Uint8Array(N*N), rd=new Uint8Array(N*N);
-  const sh=plateauShape(seed);
-  for(let y=0;y<N;y++)for(let x=0;x<N;x++){const i=y*N+x;
-    const coast=53.5+1.6*Math.sin(y*0.21+0.7)+1.1*Math.sin(y*0.071+2.1); let v=0;
-    if(x+.5>coast)v=2; else if(x+.5>coast-2.3)v=3;
-    const dz=(x+.5)<27+3*Math.sin(y*.3)&&(y+.5)>46+2.5*Math.sin(x*.27+1); if(dz&&v===0)v=4;
-    const xx=x+.5, hw=1.25+(xx>40?Math.min(.7,(xx-40)*.05):0);
-    if(Math.abs(y+.5-riverY(xx))<hw&&v!==2)v=1;
-    const lx=(x+.5-42)/4.6, ly=(y+.5-11)/3.4; if(lx*lx+ly*ly<1+.12*Math.sin(x*1.3+y*.7))v=1;
-    let h=0; if(v===0){if(peakZone(x,y)){h=LV_P; v=7;} else if(sh.inB(x,y))h=LV_B; else if(sh.inA(x,y))h=LV_A;}
+  const nz=vnoise(seed+5), rim=(x,y)=>nz(x*.7,y*.7)>.55;      // borda irregular dos platôs (fora do miolo 16×16)
+  const inP=(P,x,y)=>inLote(P,x,y)||(x>=P.x-1&&x<=P.x+P.w&&y>=P.y-1&&y<=P.y+P.h&&rim(x,y));
+  for(let y=0;y<N;y++)for(let x=0;x<N;x++){const i=y*N+x; let v=0, h=0;
+    const cx=coastX(y); if(x+.5>cx)v=2; else if(x+.5>cx-2.6)v=3;
+    if(Math.hypot(x+.5,N-(y+.5))<25+2.5*Math.sin(x*.4+y*.2)&&v===0)v=4;                 // deserto no canto esquerdo
+    if(v!==2&&riverDist(x+.5,y+.5)<1.25+(x>60?.35:0))v=1;
+    const lv=lakeV(x+.5,y+.5); if(lv<1&&lv>.3)v=1;                                     // lago com ilhota no meio
+    if(v===0&&!serraZone(x,y)){if(inP(P1,x,y))h=LV_P1; else if(inP(P2,x,y))h=LV_P2;}
     tr[i]=v; ht[i]=h;}
-  for(const [x,y,h,r] of presetRoads()){const i=y*N+x; if(tr[i]===1||tr[i]===2)continue; ht[i]=h; rp[i]=r; rd[i]=1;}
+  // nada de borda irregular colada nas rampas
+  for(const [x,y] of [[19,25],[21,25],[46,24],[48,24],[20,25],[47,24]])if(inMap(x,y)&&!inLote(P1,x,y)&&!inLote(P2,x,y))ht[y*N+x]=0;
+  for(const [x,y,h,r] of presetRoads()){const i=y*N+x; if(tr[i]===2)continue; ht[i]=h; rp[i]=r; rd[i]=tr[i]===1?2:1;}
   return {tr,ht,rp,rd};}
-// picos da serra (enfeite desenhado por cima da faixa de rocha do fundo)
-let PEAK_C=null;
-function peaks(){const seed=S?S.seed||1:1; if(PEAK_C&&PEAK_C.seed===seed)return PEAK_C.list; const r=rng(seed+77), list=[];
-  const add=(x,y,big)=>list.push({x,y,w:(big?220:160)+r()*80,h:(big?210:150)+r()*90,sx:(r()-.5)*.3,k:Math.floor(r()*1e6)});
-  for(let x=3;x<=27;x+=4+Math.floor(r()*2))add(x,1,r()<.5);
-  for(let y=5;y<=22;y+=4+Math.floor(r()*2))add(1,y,r()<.5);
-  add(4,4,true);
-  PEAK_C={seed,list}; return list;}
+// enfeites fixos do mapa: serra (picos, cordilheiras e morros em imagem), arco, pedras no mar e portal do túnel.
+// k = imagem, x/y = canto de cima do lote, f = espelhado (as da borda esquerda olham para o outro lado)
+const DECOR=(()=>{const L=[], add=(k,x,y,f)=>L.push({k,x,y,f:!!f});
+  // borda de cima-direita (y pequeno): cordilheiras e picos alternados, um pouco sobrepostos
+  const cimaD=[['serra-cordilheira-1',-1],['serra-pico-1',-2],['serra-cordilheira-2',-1],['serra-pico-3',-1],['serra-cordilheira-1',-1],['serra-pico-2',-2],['serra-cordilheira-2',-1],['serra-pico-4',-1]];
+  let x=4; for(let n=0;x<62;n++){const [k,y]=cimaD[n%cimaD.length]; add(k,x,y); x+=k.includes('cordilheira')?10:6;}
+  // borda de cima-esquerda (x pequeno): espelhadas
+  let y=6; for(let n=0;y<46;n++){const [k,x0]=cimaD[(n+3)%cimaD.length]; add(k,x0,y,true); y+=k.includes('cordilheira')?10:6;}
+  add('serra-pico-1',-2,-2); add('serra-pico-3',4,-3); add('serra-pico-2',-3,4,true);           // canto do fundo
+  // canto direito: maciço que desce até o mar
+  add('serra-pico-2',64,-2); add('serra-pico-1',71,1); add('serra-pico-3',76,-2); add('serra-pico-4',66,7); add('serra-rocha-1',73,9);
+  add('serra-pico-3',72,14); add('serra-rocha-2',66,15); add('serra-rocha-1',72,21);
+  add('arco-do-deserto',ARCO.x,ARCO.y);
+  add('pedra-no-mar-1',80,48); add('pedra-no-mar-2',81,64); add('pedra-no-mar-1',79,76,true);
+  return L;})();
+const PEAKS_ALL=DECOR.filter(d=>d.k.startsWith('serra-'));
+const decorChunk=d=>[clamp(Math.floor(d.x/CH),0,NC-1),clamp(Math.floor(d.y/CH),0,NC-1)];
+function peaks(){return PEAKS_ALL;}
 // alturas dos 4 cantos em níveis a partir de ht/rp
 function cornerL(h,r){if(!r)return [h,h,h,h];
   if(r<5){const d=r-1; return d===0?[h,h+1,h+1,h]:d===1?[h,h,h+1,h+1]:d===2?[h+1,h,h,h+1]:[h+1,h+1,h,h];}
@@ -776,13 +801,14 @@ function cornerL(h,r){if(!r)return [h,h,h,h];
 const DIRS4=[[1,0],[0,1],[-1,0],[0,-1]];
 function genObstacles(tr,ht,seed){const ob=new Uint8Array(N*N), r=rng(seed);
   const nz=(x,y)=>Math.sin(x*.21+seed%7)*Math.cos(y*.17+1.3)+Math.sin((x+y)*.09+2)*.6;
-  for(let y=0;y<N;y++)for(let x=0;x<N;x++){const i=y*N+x; const v=tr[i]; if(v!==0&&v!==4&&v!==6&&v!==7)continue; if(nearPortal(x,y))continue;
-    if(peakZone(x,y)){if(v===7&&r()<.07)ob[i]=2; continue;}
-    const ch=Math.floor(x/CH)+Math.floor(y/CH)*NC, start=START_CH.some(([a,b])=>a+b*NC===ch);
-    if(v===4){if(r()<.09)ob[i]=r()<.75?5:3; continue;}
-    const mt=ht[i]>0, forest=nz(x,y)>.55||mt, u0=r();
-    let p=start?.05:(mt?.34:forest?.42:.15); if(v===6)p=.12;
-    if(u0<p){const u=r(); ob[i]=mt?(u<.6?2:u<.85?3:1):forest?(u<.55?2:u<.85?1:u<.93?4:3):(u<.35?1:u<.5?2:u<.78?4:3);}}
+  for(let y=0;y<N;y++)for(let x=0;x<N;x++){const i=y*N+x; const v=tr[i]; if(v!==0&&v!==4)continue; if(nearPortal(x,y)||inLote(ARCO,x,y))continue;
+    if(serraZone(x,y)){if(r()<.12)ob[i]=2; continue;}
+    const start=inStart(x,y);
+    if(v===4){if(r()<.07)ob[i]=r()<.7?5:3; continue;}
+    const mt=ht[i]>0, forest=nz(x,y)>.5, u0=r();
+    let p=start?.04:(mt?.14:forest?.5:.05);
+    if(lakeV(x+.5,y+.5)<=.3)p=.6;                            // ilhota do lago com árvores
+    if(u0<p){const u=r(); ob[i]=mt?(u<.55?2:u<.8?1:u<.92?4:3):forest?(u<.55?2:u<.85?1:u<.93?4:3):(u<.4?1:u<.6?2:u<.92?4:3);}}
   return ob;}
 
 /* ================= Estado ================= */
@@ -792,43 +818,35 @@ function emptyD(){return {pop:0,popCap:0,gCap:0,occ:new Int32Array(N*N).fill(-1)
 D=emptyD();
 function newGame(keep){
   const now=Date.now(), seed=(Math.random()*1e9)|0;
-  const s={v:4,terr:TERR_VER,coins:1500,goods:60,inv:{wood:10,stone:10,steel:0,rubber:0,tools:0,tires:0,cars:0},xp:0,lv:1,ul:Array(NC*NC).fill(0),b:[],nid:1,seed,
+  const s={v:5,coins:1500,goods:60,inv:{wood:10,stone:10,steel:0,rubber:0,tools:0,tires:0,cars:0},xp:0,lv:1,ul:Array(NC*NC).fill(0),b:[],nid:1,seed,
     st:{rent:0,biz:0,supply:0,harvest:0,plant:0,train:0,expand:0,clear:0,road:0,bridge:0,dig:0,prod:0,build:0,order:0,export:0,terra:0},q:{done:[],base:{}},t:now,
     col:{}, ord:[], ordT:[0,0,0], ch:null, title:0, taxT:now, evSeen:''};
   fillNewState(s,now);
   START_CH.forEach(([cx,cy])=>s.ul[cy*NC+cx]=1);
-  G=emptyGrids(); const tg=genTerrain(seed); G.tr=tg.tr; G.ht=tg.ht; G.rp=tg.rp; G.ob=genObstacles(G.tr,G.ht,seed); for(let i=0;i<N*N;i++)if(tg.rd[i]){G.rd[i]=1; G.ob[i]=0;}
+  G=emptyGrids(); const tg=genTerrain(seed); G.tr=tg.tr; G.ht=tg.ht; G.rp=tg.rp; G.ob=genObstacles(G.tr,G.ht,seed); for(let i=0;i<N*N;i++)if(tg.rd[i]){G.rd[i]=tg.rd[i]; G.ob[i]=0;}
   G.rl[TUN.y*N+TUN.x]=1; G.rl[TUN.y*N+TUN.x+1]=1;
   const add=(k,x,y,extra)=>{const t=T[k]; s.b.push(Object.assign({i:s.nid++,k,x,y,f:0,lv:1,d:now,a:0,s:0},extra||{}));
     for(let dy=0;dy<t.h;dy++)for(let dx=0;dx<t.w;dx++)G.ob[(y+dy)*N+x+dx]=0;};
-  for(let x=16;x<=31;x++){G.rd[21*N+x]=1;G.ob[21*N+x]=0;}
-  for(let y=16;y<=31;y++){const i=y*N+27; G.rd[i]=G.tr[i]===1?2:(G.tr[i]!==2?1:0); G.ob[i]=0;}
-  add('hall',23,18);
-  add('casinha',17,19,{a:now+20000}); add('chale',19,19,{a:now+45000});
-  add('padaria',28,19); add('geminadas',30,19,{a:now+30000});
-  add('plot',17,22,{s:''}); add('plot',19,22,{s:'straw',a:now+15000});
-  add('arvore',21,19); add('arvore',22,20); add('flores',26,20); add('flores',21,20);
-  for(let qy=44;qy<=51;qy++)G.pv[qy*Q2+46]=1;
-  for(let qx=42;qx<=45;qx++)G.fc[47*Q2+qx]=1;
+  for(let x=36;x<=59;x++){G.rd[41*N+x]=1;G.ob[41*N+x]=0;}
+  for(let y=36;y<=59;y++){const i=y*N+47; G.rd[i]=1; G.ob[i]=0;}
+  add('hall',43,38);
+  add('casinha',37,39,{a:now+20000}); add('chale',39,39,{a:now+45000});
+  add('padaria',48,39); add('geminadas',50,39,{a:now+30000});
+  add('plot',37,42,{s:''}); add('plot',39,42,{s:'straw',a:now+15000});
+  add('arvore',41,39); add('arvore',42,40); add('flores',46,40); add('flores',41,40);
+  for(let qy=84;qy<=91;qy++)G.pv[qy*Q2+86]=1;
+  for(let qx=82;qx<=85;qx++)G.fc[87*Q2+qx]=1;
   if(keep){s.coins=Math.max(s.coins,keep.coins||0); s.goods=Math.min(400,Math.max(60,keep.goods||0)); s.xp=keep.xp||0; s.lv=keep.lv||1; s.st.rent=keep.st?.rent||0;}
   return s;}
 const GRID_KEYS=['tr','ht','rp','rd','bm','rl','ob','pv','fc'];
 function serialize(){const enc=a=>{let s=''; for(let i=0;i<a.length;i++)s+=a[i].toString(36); return s;};
   const o=Object.assign({},S); for(const k of GRID_KEYS)o['g_'+k]=enc(G[k]); return JSON.stringify(o);}
-function hydrate(s){if(!s||!Array.isArray(s.b))return false;
+// v5 = mapa 84×84 (áreas de 12×12). Saves do mapa antigo (v2 a v4) não servem mais: viram jogo novo (com cópia guardada).
+const SAVE_VER=5;
+function hydrate(s){if(!s||!Array.isArray(s.b)||s.v!==SAVE_VER)return false;
   const dec=(str,len)=>{const a=new Uint8Array(len); if(str)for(let i=0;i<len&&i<str.length;i++)a[i]=parseInt(str[i],36)||0; return a;};
   const g=emptyGrids();
-  if(s.v===2){ // save da fase 1: sem relevo, calçada de quadrado inteiro
-    g.tr=dec(s.tr,N*N); g.rd=dec(s.rd,N*N); g.ob=dec(s.ob,N*N);
-    const tg=genTerrain(s.seed||1);
-    for(let i=0;i<N*N;i++){const x=i%N,y=(i/N)|0; const cx=Math.floor(x/CH),cy=Math.floor(y/CH); const owned=!!(s.ul||[])[cy*NC+cx];
-      if(!owned&&g.tr[i]===0){g.ht[i]=tg.ht[i]; g.tr[i]=tg.tr[i]===6||tg.tr[i]===4?tg.tr[i]:g.tr[i]; if(tg.tr[i]===4&&g.ob[i]&&g.ob[i]!==3)g.ob[i]=5;}
-      if(g.rd[i]===3){g.rd[i]=0; for(const [a,b] of [[0,0],[1,0],[0,1],[1,1]])g.pv[(y*2+b)*Q2+x*2+a]=2;}}
-    s.inv={wood:s.wood||0,stone:s.stone||0,steel:0,rubber:0,tools:0,tires:0,cars:0}; delete s.wood; delete s.stone; delete s.tr; delete s.rd; delete s.ob; s.v=3;}
-  else if(s.v===3||s.v===4){for(const k of GRID_KEYS){g[k]=dec(s['g_'+k],(k==='pv'||k==='fc')?Q2*Q2:N*N); delete s['g_'+k];}}
-  else return false;
-  if(s.v===3){migrateV4(s,g); s.v=4; upgradedV3=true;}
-  else if((s.terr||0)<TERR_VER)refreshTerrain(s,g);
+  for(const k of GRID_KEYS){g[k]=dec(s['g_'+k],(k==='pv'||k==='fc')?Q2*Q2:N*N); delete s['g_'+k];}
   fillNewState(s,Date.now());
   s.b=s.b.filter(b=>T[b.k]);
   s.st=Object.assign({rent:0,biz:0,supply:0,harvest:0,plant:0,train:0,expand:0,clear:0,road:0,bridge:0,dig:0,prod:0,build:0,order:0,export:0,terra:0},s.st||{});
@@ -841,22 +859,6 @@ function fillNewState(s,now){if(!s.name)s.name='Cidade Viva'; if(!s.laws)s.laws=
   if(!s.hist)s.hist=[]; if(!s.histT)s.histT=0; if(!s.fireT)s.fireT=now+5*60000;
   for(const k of ['ore','lime'])if(s.inv&&s.inv[k]==null)s.inv[k]=0;
   for(const k of ['fire','fireOut','harvestT','research','reqs','law','chainStep'])if(s.st&&s.st[k]==null)s.st[k]=0;}
-// relevo novo nas áreas não compradas. O que o jogador já tem (áreas compradas, água, ruas, trilhos) fica igual
-// e as alturas dos cantos dele viram pontos fixos, para o relevo novo encostar sem degrau.
-const TERR_VER=3;
-function refreshTerrain(s,g){const seed=s.seed||1, owned=(x,y)=>!!(s.ul||[])[Math.floor(y/CH)*NC+Math.floor(x/CH)];
-  const tg=genTerrain(seed), ob=genObstacles(tg.tr,tg.ht,seed);
-  for(let i=0;i<N*N;i++){const x=i%N,y=(i/N)|0, o=g.tr[i];
-    if(owned(x,y)||o===1||o===2||g.rd[i]||g.rl[i]||tg.tr[i]===1||tg.tr[i]===2)continue;
-    g.ht[i]=tg.ht[i]; g.rp[i]=tg.rp[i]; if(o===0||o===6||o===5||o===4||o===7)g.tr[i]=tg.tr[i]===3?o:tg.tr[i];
-    g.ob[i]=tg.rd[i]?0:ob[i]; if(tg.rd[i])g.rd[i]=1;}
-  s.terr=TERR_VER;}
-// save v3 → v4: relevo novo nas áreas não compradas e túnel novo perto do centro
-function migrateV4(s,g){const owned=(x,y)=>!!(s.ul||[])[Math.floor(y/CH)*NC+Math.floor(x/CH)];
-  for(let y=0;y<N;y++)for(let x=0;x<N;x++)if(!owned(x,y))g.rl[y*N+x]=0;
-  const busy=s.b.some(b=>{const t=T[b.k]; if(!t)return false; const w=b.f?t.h:t.w,h=b.f?t.w:t.h; return TUN.x>=b.x&&TUN.x<b.x+w&&TUN.y>=b.y&&TUN.y<b.y+h;});
-  const i=TUN.y*N+TUN.x; if(!busy&&!g.rd[i]&&g.tr[i]!==1&&g.tr[i]!==2){g.rl[i]=1; g.ob[i]=0; g.ht[i]=0; g.rp[i]=0;}
-  refreshTerrain(s,g);}
 function migrateV1(old){let refund=0; for(const b of old.b||[]){const k=b.k; if(k==='hall'||k==='road')continue;
   const c={h1:100,h2:400,h3:1200,h4:2500,h5:6000,h6:15000,h7:40000,h8:70000,b1:200,b2:600,b3:1500,b4:3000,b5:8000,b6:18000,b7:45000,b8:80000,
     plot:50,c1:800,c2:2500,c3:6000,c4:15000,c5:35000,c6:70000,s1:500,st:1500,s2:2000,s3:8000,d1:50,d2:80,d3:200,d4:400,d5:1500,d6:3000,d7:6000}[k]||0; refund+=c;}
@@ -974,7 +976,11 @@ function markDirty(){dirtySave=true;}
 function saveNow(){if(!S)return; S.t=Date.now(); const json=serialize(); try{localStorage.setItem(SAVE_KEY,json);}catch(e){} dirtySave=false; pushDb(json);}
 function pushDb(json){if(!dbRef)return; if(dbWriting){dbPending=true;return;} dbWriting=true;
   dbRef.set({save:json,t:S.t}).catch(()=>{}).finally(()=>{dbWriting=false; if(dbPending){dbPending=false; pushDb(serialize());}});}
-function loadLocal(){try{const j=localStorage.getItem(SAVE_KEY); if(j){const s=JSON.parse(j); if(s&&(s.v>=2&&s.v<=4))return s;}}catch(e){} return null;}
+// saves do mapa antigo (v2 a v4) ficam guardados numa chave à parte e o jogo começa no mapa novo
+const OLD_MAP_KEY='cidadeviva_save_mapa64';
+let oldMapSaved=false;
+function loadLocal(){try{const j=localStorage.getItem(SAVE_KEY); if(j){const s=JSON.parse(j); if(s&&s.v===SAVE_VER)return s;
+    if(s&&s.v>=2&&s.v<=4){try{if(!localStorage.getItem(OLD_MAP_KEY))localStorage.setItem(OLD_MAP_KEY,j);}catch(e){} oldMapSaved=true;}}}catch(e){} return null;}
 function loadOld(){try{const j=localStorage.getItem(OLD_KEY); if(j){const s=JSON.parse(j); if(s&&s.v===1)return s;}}catch(e){} return null;}
 let migratedMsg=null, upgradedV2=false, upgradedV3=false;
 function bootState(){const s=loadLocal(); if(s){const was=s.v; if(hydrate(s)){if(was===2)upgradedV2=true; return;}}
@@ -985,7 +991,8 @@ async function initCloud(){
     const [db,user]=await Promise.all([window.claude.use('db'),window.claude.use('user')]); if(!db||!user)return;
     const id=await user.id(); if(!id)return; const ref=db.doc('data/users/'+id+'/save'); const snap=await ref.get(); dbRef=ref; saveWhere='sua conta';
     if(snap.exists){const d=snap.data(); try{const s=JSON.parse(d.save);
-      if(s&&(s.v>=2&&s.v<=4)&&(s.t||0)>(S.t||0)+3000){const was=s.v; if(hydrate(s)){afterLoad(); if(was<4)showUpgrade(); else toast('Progresso carregado da sua conta');}}
+      if(s&&s.v===SAVE_VER&&(s.t||0)>(S.t||0)+3000){if(hydrate(s)){afterLoad(); toast('Progresso carregado da sua conta');}}
+      else if(s&&s.v>=2&&s.v<=4){try{await db.doc('data/users/'+id+'/save-mapa64').set({save:d.save,t:Date.now()});}catch(e){}}
       else if(s&&s.v===1&&!migratedMsg&&(S.st.expand===0&&S.lv<=1)){const m=migrateV1(s); S=m.s; migratedMsg=m.refund; afterLoad(); showMigrated();}}catch(e){}}
     saveNow(); initArtCloud(db);
   }catch(e){dbRef=null;}}
@@ -1941,7 +1948,8 @@ function imgSprite(slug,night){const e=IMG[slug]; if(!e)return null; const a=e.a
   const sx=2/k, sy=2/(k*vy); const base={cv:pick.img,ox:pick.ax+(a.dx||0)*sx,oy:pick.ay-(a.dy||0)*sy,sx,sy};
   if(night&&pick===e.d){if(!e.dn||e.dnSrc!==pick.img.src){const s=nightOf({cv:pick.img,ox:0,oy:0,sx:1,sy:1},null,null,0); e.dn=s.cv; e.dnSrc=pick.img.src;} return Object.assign({},base,{cv:e.dn});}
   return base;}
-function sprite(kind,key,v,night){const slug=kind==='o'?OB[key].slug:T[key].slug;
+function sprite(kind,key,v,night){let slug=kind==='o'?OB[key].slug:T[key].slug;
+  if(kind==='o'){const vs=[1,2,3].map(i=>slug+'-'+i).filter(s=>IMG[s]); if(vs.length)slug=vs[v%vs.length];}   // variações em imagem (pinheiro-1, -2…)
   const im=imgSprite(slug,night); if(im)return im;
   const id=kind+':'+key+':'+v+(night?':n':''); let s=SPR.get(id); if(s)return s;
   const dims=kind==='o'?{w:1,h:1}:T[key], art=kind==='o'?OB[key].art:T[key].art; if(!art)return null;
@@ -1959,7 +1967,7 @@ const IDB={db:null,open(){return this.db||(this.db=new Promise((res,rej)=>{try{c
   async put(k,v){const db=await this.open();return new Promise((res,rej)=>{const tx=db.transaction('img','readwrite');tx.objectStore('img').put(v,k);tx.oncomplete=res;tx.onerror=()=>rej(tx.error);});},
   async get(k){const db=await this.open();return new Promise((res,rej)=>{const tx=db.transaction('img');const q=tx.objectStore('img').get(k);q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error);});}};
 async function urlFor(u){if(!u)return null; if(u.startsWith('a:'))return '/_blob/'+u.slice(2); if(u.startsWith('idb:')){try{const b=await IDB.get(u.slice(4)); return b?URL.createObjectURL(b):null;}catch(e){return null;}} return u;}
-async function applyArt(slug){const m=ARTMAP[slug]; if(!m){delete IMG[slug]; refreshArt(); return;}
+async function applyArt(slug){const m=ARTMAP[slug]; if(!m){delete IMG[slug]; builtinFor(slug); refreshArt(); return;}
   const e={adj:m.adj||{}}; for(const side of ['d','n']){const r=m[side]; if(!r)continue; const src=await urlFor(r.u); if(!src)continue;
     const img=new Image(); img.onload=()=>{refreshArt();}; img.onerror=()=>{}; img.src=src; e[side]={img,ax:r.ax,ay:r.ay};}
   IMG[slug]=e; refreshArt();}
@@ -1996,6 +2004,50 @@ function vecSprite(key,bb,fn,ss,noCrop){let s=VSP.get(key); if(s)return s; ss=ss
   try{fn(c);}catch(e){console.error('vecSprite',key,e);} LM=lm; TGT.k=sv[0]; TGT.tx=sv[1]; TGT.ty=sv[2];
   if(noCrop)s={cv:c2,ox:-bb[0]*ss,oy:-bb[1]*ss,sx:ss,sy:ss}; else{const cr=cropCanvas(c2); s={cv:cr.cv,ox:-bb[0]*ss-cr.x,oy:-bb[1]*ss-cr.y,sx:ss,sy:ss};}
   VSP.set(key,s); if(VSP.size>6000){const k0=VSP.keys().next().value; const o=VSP.get(k0); VSP.delete(k0); BK.free(o.cv);} return s;}
+
+/* ---- 44-imagens-prontas.js ---- */
+/* ================= Imagens prontas do mapa (geradas por imagens-mapa/preparar.py) =================
+ src = arquivo publicado junto com o jogo; ax/ay = âncora em px da imagem (2 px por px do mundo); lw/lh = lote. */
+const IMG_PRONTAS={"serra-pico-1":{"src":"img/serra-pico-1.webp","w":1024,"h":1003,"ax":512.0,"ay":481.0,"lw":8,"lh":8},"serra-pico-2":{"src":"img/serra-pico-2.webp","w":1024,"h":941,"ax":512.0,"ay":419.6,"lw":8,"lh":8},"serra-pico-3":{"src":"img/serra-pico-3.webp","w":896,"h":880,"ax":448.0,"ay":423.2,"lw":7,"lh":7},"serra-pico-4":{"src":"img/serra-pico-4.webp","w":896,"h":790,"ax":448.0,"ay":334.1,"lw":7,"lh":7},"serra-rocha-1":{"src":"img/serra-rocha-1.webp","w":640,"h":467,"ax":320.0,"ay":142.3,"lw":5,"lh":5},"serra-rocha-2":{"src":"img/serra-rocha-2.webp","w":640,"h":425,"ax":320.0,"ay":100.8,"lw":5,"lh":5},"serra-cordilheira-1":{"src":"img/serra-cordilheira-1.webp","w":1280,"h":605,"ax":384.0,"ay":-41.0,"lw":14,"lh":6},"serra-cordilheira-2":{"src":"img/serra-cordilheira-2.webp","w":1280,"h":576,"ax":384.0,"ay":-69.8,"lw":14,"lh":6},"arco-do-deserto":{"src":"img/arco-do-deserto.webp","w":448,"h":377,"ax":192.0,"ay":149.2,"lw":4,"lh":3},"portal-tunel":{"src":"img/portal-tunel.webp","w":384,"h":365,"ax":192.0,"ay":169.4,"lw":3,"lh":3},"pedra-no-mar-1":{"src":"img/pedra-no-mar-1.webp","w":256,"h":228,"ax":128.0,"ay":95.4,"lw":2,"lh":2},"pedra-no-mar-2":{"src":"img/pedra-no-mar-2.webp","w":256,"h":156,"ax":128.0,"ay":24.9,"lw":2,"lh":2},"neblina-1":{"src":"img/neblina-1.webp","w":480,"h":139},"neblina-2":{"src":"img/neblina-2.webp","w":480,"h":165},"obstaculo-pinheiro-1":{"src":"img/obstaculo-pinheiro-1.webp","w":60,"h":87,"ax":30.0,"ay":52.4,"lw":1,"lh":1},"obstaculo-pinheiro-2":{"src":"img/obstaculo-pinheiro-2.webp","w":52,"h":72,"ax":26.0,"ay":37.8,"lw":1,"lh":1},"obstaculo-pinheiro-3":{"src":"img/obstaculo-pinheiro-3.webp","w":80,"h":94,"ax":40.0,"ay":59.2,"lw":1,"lh":1},"obstaculo-arvore-grande-1":{"src":"img/obstaculo-arvore-grande-1.webp","w":92,"h":91,"ax":46.0,"ay":56.3,"lw":1,"lh":1},"obstaculo-arvore-grande-2":{"src":"img/obstaculo-arvore-grande-2.webp","w":88,"h":84,"ax":44.0,"ay":49.5,"lw":1,"lh":1},"obstaculo-arvore-grande-3":{"src":"img/obstaculo-arvore-grande-3.webp","w":104,"h":84,"ax":52.0,"ay":49.5,"lw":1,"lh":1},"obstaculo-pedra-grande-1":{"src":"img/obstaculo-pedra-grande-1.webp","w":68,"h":62,"ax":34.0,"ay":28.1,"lw":1,"lh":1},"obstaculo-pedra-grande-2":{"src":"img/obstaculo-pedra-grande-2.webp","w":80,"h":66,"ax":40.0,"ay":32.0,"lw":1,"lh":1},"obstaculo-arbusto-1":{"src":"img/obstaculo-arbusto-1.webp","w":60,"h":50,"ax":30.0,"ay":16.5,"lw":1,"lh":1},"obstaculo-arbusto-2":{"src":"img/obstaculo-arbusto-2.webp","w":60,"h":43,"ax":30.0,"ay":9.7,"lw":1,"lh":1},"obstaculo-cacto-1":{"src":"img/obstaculo-cacto-1.webp","w":36,"h":58,"ax":18.0,"ay":24.3,"lw":1,"lh":1},"obstaculo-cacto-2":{"src":"img/obstaculo-cacto-2.webp","w":52,"h":45,"ax":26.0,"ay":11.6,"lw":1,"lh":1},"banco-de-praca":{"src":"img/banco-de-praca.webp","w":40,"h":35,"ax":20.0,"ay":2.0,"lw":1,"lh":1},"hidrante":{"src":"img/hidrante.webp","w":18,"h":32,"ax":9.0,"ay":-1.0,"lw":1,"lh":1},"poste-de-luz":{"src":"img/poste-de-luz.webp","w":20,"h":76,"ax":10.0,"ay":41.7,"lw":1,"lh":1},"lixeira":{"src":"img/lixeira.webp","w":20,"h":33,"ax":10.0,"ay":0.0,"lw":1,"lh":1},"canteiro-de-flores":{"src":"img/canteiro-de-flores.webp","w":92,"h":67,"ax":46.0,"ay":33.0,"lw":1,"lh":1},"arvore-de-rua":{"src":"img/arvore-de-rua.webp","w":68,"h":80,"ax":34.0,"ay":45.6,"lw":1,"lh":1},"ipe-amarelo":{"src":"img/ipe-amarelo.webp","w":84,"h":90,"ax":42.0,"ay":55.3,"lw":1,"lh":1},"chafariz":{"src":"img/chafariz.webp","w":192,"h":197,"ax":96.0,"ay":127.1,"lw":2,"lh":2},"estatua":{"src":"img/estatua.webp","w":68,"h":95,"ax":34.0,"ay":60.2,"lw":1,"lh":1},"coreto":{"src":"img/coreto.webp","w":208,"h":217,"ax":104.0,"ay":146.5,"lw":2,"lh":2},"ponto-de-onibus":{"src":"img/ponto-de-onibus.webp","w":96,"h":98,"ax":48.0,"ay":63.1,"lw":1,"lh":1},"caixa-de-correio":{"src":"img/caixa-de-correio.webp","w":20,"h":31,"ax":10.0,"ay":-1.9,"lw":1,"lh":1},"vaso-de-plantas":{"src":"img/vaso-de-plantas.webp","w":36,"h":40,"ax":18.0,"ay":6.8,"lw":1,"lh":1},"placa-de-direcao":{"src":"img/placa-de-direcao.webp","w":32,"h":63,"ax":16.0,"ay":29.1,"lw":1,"lh":1},"cerca-viva":{"src":"img/cerca-viva.webp","w":100,"h":90,"ax":50.0,"ay":55.3,"lw":1,"lh":1},"relogio-de-praca":{"src":"img/relogio-de-praca.webp","w":24,"h":69,"ax":12.0,"ay":34.9,"lw":1,"lh":1},"carro-hatch-frente":{"src":"img/carro-hatch-frente.webp","w":42,"h":32,"ax":21.0,"ay":20},"carro-hatch-traseira":{"src":"img/carro-hatch-traseira.webp","w":42,"h":29,"ax":21.0,"ay":17},"carro-seda-frente":{"src":"img/carro-seda-frente.webp","w":46,"h":31,"ax":23.0,"ay":19},"carro-seda-traseira":{"src":"img/carro-seda-traseira.webp","w":46,"h":29,"ax":23.0,"ay":17},"carro-taxi-frente":{"src":"img/carro-taxi-frente.webp","w":46,"h":37,"ax":23.0,"ay":25},"carro-taxi-traseira":{"src":"img/carro-taxi-traseira.webp","w":46,"h":33,"ax":23.0,"ay":21},"carro-picape-frente":{"src":"img/carro-picape-frente.webp","w":50,"h":42,"ax":25.0,"ay":30},"carro-picape-traseira":{"src":"img/carro-picape-traseira.webp","w":50,"h":40,"ax":25.0,"ay":28},"carro-onibus-frente":{"src":"img/carro-onibus-frente.webp","w":76,"h":71,"ax":38.0,"ay":59},"carro-onibus-traseira":{"src":"img/carro-onibus-traseira.webp","w":76,"h":71,"ax":38.0,"ay":59},"rua-reta":{"src":"img/rua-reta.webp","w":512,"h":512,"calcada":0.22},"rua-curva":{"src":"img/rua-curva.webp","w":512,"h":512,"calcada":0.22},"rua-t":{"src":"img/rua-t.webp","w":512,"h":512,"calcada":0.22},"rua-cruz":{"src":"img/rua-cruz.webp","w":512,"h":512,"calcada":0.22},"rua-fim":{"src":"img/rua-fim.webp","w":512,"h":512,"calcada":0.22},"chao-grama":{"src":"img/chao-grama.webp","w":512,"h":512,"textura":1},"chao-areia-praia":{"src":"img/chao-areia-praia.webp","w":512,"h":512,"textura":1},"chao-areia-deserto":{"src":"img/chao-areia-deserto.webp","w":512,"h":512,"textura":1},"chao-agua":{"src":"img/chao-agua.webp","w":512,"h":512,"textura":1},"paredao-rocha":{"src":"img/paredao-rocha.webp","w":512,"h":512,"textura":1}};
+
+/* ---- 45-imagens-no-jogo.js ---- */
+/* ================= Imagens prontas no jogo =================
+ As imagens em img/ (lista em 44-imagens-prontas.js) carregam sozinhas no começo. Enquanto não chegam, o jogo usa
+ os desenhos em código. Uma imagem enviada pela oficina com o mesmo nome tem prioridade. */
+const IMGP={};           // slug → Image já carregada (texturas, peças de rua, enfeites do mapa)
+let imgRebakeT=null;
+function rebakeSoon(){clearTimeout(imgRebakeT); imgRebakeT=setTimeout(()=>{SPR.clear(); for(const k of Object.keys(LPAT))delete LPAT[k]; ckFreeAll(); mapVer++; try{thumbCache.clear();}catch(e){}},150);}
+function builtinFor(slug){const m=IMG_PRONTAS[slug]; if(!m||m.textura||m.calcada)return; const im=IMGP[slug]||m.img; if(im)IMG[slug]={d:{img:im,ax:m.ax,ay:m.ay},adj:{},pronta:1};}
+// textura em imagem: k = px da imagem por quadrado (4 quadrados por repetição)
+function texPat(im,k){const cv=document.createElement('canvas'); cv.width=im.naturalWidth; cv.height=im.naturalHeight; cv.getContext('2d').drawImage(im,0,0);
+  const p=g.createPattern(cv,'repeat'); p._k=k; p._src=cv; return p;}
+function texReady(slug,im){const k=im.naturalWidth/4;
+  if(slug==='chao-grama'){PAT.grass=texPat(im,k);}
+  else if(slug==='chao-areia-praia'){PAT.sand=texPat(im,k);}
+  else if(slug==='chao-areia-deserto'){PAT.desert=texPat(im,k);}
+  else if(slug==='chao-agua'){PAT.sea=texPat(im,im.naturalWidth/3); PAT_SRC.sea=PAT.sea._src;}
+  else if(slug==='paredao-rocha'){ROCHA.pat=g.createPattern(im,'repeat'); ROCHA.w=im.naturalWidth;}}
+const ROCHA={pat:null,w:512};
+function loadBuiltinImages(){for(const slug in IMG_PRONTAS){const m=IMG_PRONTAS[slug]; const im=new Image(); m.img=im;
+    im.onload=()=>{IMGP[slug]=im; if(m.textura)texReady(slug,im); rebakeSoon(); try{refreshArt();}catch(e){}};
+    im.onerror=()=>{};
+    im.src=m.src;
+    if(!m.textura&&!m.calcada&&!ARTMAP[slug])builtinFor(slug);}}
+// enfeite fixo do mapa (serra, arco, pedras no mar, portal): desenhado na âncora = canto de cima do lote
+function decorSprite(slug,night){return imgSprite(slug,night);}
+function decorBox(d){const s=decorSprite(d.k,false); const [X,Y]=P(d.x,d.y,0);
+  if(!s){const m=IMG_PRONTAS[d.k]; return m?[X-m.w/2-4,Y-m.h/2,X+m.w/2+4,Y+m.h/2]:[X-40,Y-80,X+40,Y+20];}
+  const w=s.cv.width/s.sx, h=s.cv.height/s.sy, ox=s.ox/s.sx, oy=s.oy/s.sy;
+  return d.f?[X-(w-ox)-2,Y-oy-2,X+ox+2,Y-oy+h+2]:[X-ox-2,Y-oy-2,X-ox+w+2,Y-oy+h+2];}
+function drawDecor(c,d,n){const s=decorSprite(d.k,n>.5); if(!s)return; setW(c); const [X,Y]=P(d.x,d.y,0); drawSprite(c,s,X,Y,d.f);}
+const decorLote=d=>{const m=IMG_PRONTAS[d.k]; const w=m?m.lw||1:1, h=m?m.lh||1:1; return d.f?{w:h,h:w}:{w,h};};
+const decorD=d=>{const l=decorLote(d); return d.x+d.y+(l.w+l.h)/2;};
+// ruas em imagem: 5 peças vistas de cima, giradas para cada caso (0:+x 1:+y 2:-x 3:-y)
+const RUA_PECAS=[['rua-reta',[1,3]],['rua-curva',[0,1]],['rua-t',[0,1,3]],['rua-cruz',[0,1,2,3]],['rua-fim',[1]]];
+function ruaPeca(nb){const want=[0,1,2,3].filter(d=>nb[d]); const n=want.length;
+  for(const [slug,base] of RUA_PECAS){if(base.length!==Math.max(1,n))continue; const im=IMGP[slug]; if(!im)return null;
+    for(let k=0;k<4;k++){const rot=base.map(d=>(d+k)%4).sort(); if(n===0?k===0:rot.join()===want.slice().sort().join())return {im,k};}}
+  return null;}
 
 /* ---- 50-camera-texturas.js ---- */
 /* ================= Câmera e tempo ================= */
@@ -2056,7 +2108,8 @@ function initPats(){
   PAVE[5]=mkPat((c,s)=>{const cols=['#e8e1d0','#2f7f8f','#c8553d','#e8e1d0'];for(let i=0;i<4;i++)for(let j=0;j<4;j++){c.fillStyle=cols[(i+j)%4];c.fillRect(i*16,j*16,16,16);c.fillStyle='#f6f0e2';c.beginPath();c.arc(i*16+8,j*16+8,4,0,7);c.fill();}},64);
   PAVE[6]=mkPat((c,s)=>speck(c,s,23,120,'rgba(90,60,30,.4)','rgba(220,190,150,.4)','#b38a5e'),64);
   PAVE[7]=mkPat((c,s)=>{c.fillStyle='#86bf65';c.fillRect(0,0,s,s);c.fillStyle='#d8d2c4';for(const [x,y] of [[10,10],[42,14],[22,40],[50,46]]){c.beginPath();c.ellipse(x,y,9,6,0,0,7);c.fill();}},64);}
-function patT(p,scale,ox,oy){p.setTransform(new DOMMatrix([1/scale,0,0,1/scale,ox||0,oy||0]));}
+const seaK=()=>PAT.sea&&PAT.sea._k||32;
+function patT(p,scale,ox,oy){if(p._k)scale=p._k;p.setTransform(new DOMMatrix([1/scale,0,0,1/scale,ox||0,oy||0]));}
 const SOIL_PAT=t=>t===7?PAT.rock:t===3?PAT.sand:t===4?PAT.desert:t===5?PAT.dirt:t===6?PAT.snow:PAT.grass;
 
 
@@ -2096,7 +2149,7 @@ function perfText(){if(!PERF.t.length)return ''; const a=PERF.t.slice().sort((x,
 /* ---- estado por quadro para camadas repetidas (mar e chuva) ---- */
 const FR={seaX:0,seaY:0,rain:0,rainT:0,seaCk:[]};
 // mar fora do mapa (a leste) — dentro do mapa o mar só é pintado nos pedaços que têm água
-const SEA_OUT=[[64,-60,64,64*2+120],[48,-60,16,60],[48,64,16,60]];
+const SEA_OUT=[[N,-60,64,N*2+120],[N-12,-60,12,60],[N-12,N,12,60]];
 let RAINPAT=null, RAINCV=null;
 function rainTex(){if(RAINCV)return RAINCV; const s=128, c2=document.createElement('canvas'); c2.width=c2.height=s; const c=c2.getContext('2d'); const r=rng(31);
   c.strokeStyle='rgba(210,225,245,.55)'; c.lineCap='round';
@@ -2108,7 +2161,7 @@ function rainTex(){if(RAINCV)return RAINCV; const s=128, c2=document.createEleme
 const BK2D={name:'Canvas',
   draw(){const c=g; c.setTransform(1,0,0,1,0,0); c.globalAlpha=1; c.globalCompositeOperation='source-over';
     c.fillStyle='#3d6a34'; c.fillRect(0,0,cv.width,cv.height);
-    setIso(c); patT(PAT.sea,32,FR.seaX,FR.seaY); c.fillStyle=PAT.sea; c.beginPath(); for(const [x,y,w,h] of SEA_OUT)c.rect(x,y,w,h); for(const e of FR.seaCk)c.rect(e.cx*CH,e.cy*CH,CH,CH); c.fill();
+    setIso(c); patT(PAT.sea,seaK(),FR.seaX,FR.seaY); c.fillStyle=PAT.sea; c.beginPath(); for(const [x,y,w,h] of SEA_OUT)c.rect(x,y,w,h); for(const e of FR.seaCk)c.rect(e.cx*CH,e.cy*CH,CH,CH); c.fill();
     const K=TGT.k,TX=TGT.tx,TY=TGT.ty; let add=false, al=1, id=false; c.setTransform(1,0,0,1,0,0); id=true;
     for(let i=0;i<DL.n;i++){const p=DL.a[i];
       if(p.add!==add){c.globalCompositeOperation=p.add?'lighter':'source-over'; add=p.add;}
@@ -2135,7 +2188,7 @@ const BKGL={name:'WebGL',ok:false,R:null,root:null,world:null,iso:null,pool:null
       this.root=new PIXI.Container(); this.world=new PIXI.Container(); this.iso=new PIXI.Container(); this.pool=new PIXI.Container(); this.scr=new PIXI.Container();
       this.root.addChild(this.world,this.scr); this.world.addChild(this.iso,this.pool);
       this.iso.transform.setFromMatrix(new PIXI.Matrix(32,16,-32,16,0,0));
-      const seaT=this.texOf(PAT_SRC.sea); this.seaT=seaT; this.seaOut=SEA_OUT.map(([x,y,w,h])=>{const t=new PIXI.TilingSprite(seaT,w,h); t.position.set(x,y); t.tileScale.set(1/32); this.iso.addChild(t); return t;}); this.seaCk=[];
+      const seaT=this.texOf(PAT_SRC.sea); this.seaT=seaT; this.seaOut=SEA_OUT.map(([x,y,w,h])=>{const t=new PIXI.TilingSprite(seaT,w,h); t.position.set(x,y); t.tileScale.set(1/seaK()); this.iso.addChild(t); return t;}); this.seaCk=[]; this.seaSrc=PAT_SRC.sea;
       const rt=this.texOf(rainTex()); this.rainA=new PIXI.TilingSprite(rt,100,100); this.rainB=new PIXI.TilingSprite(rt,100,100); this.rainB.tileScale.set(1.6); this.scr.addChild(this.rainA,this.rainB);
       this.M=new PIXI.Matrix(); this.ok=true; this.resize(); return true;}
     catch(e){console.warn('PixiJS indisponível',e); if(this.el)this.el.remove(); this.ok=false; return false;}},
@@ -2147,8 +2200,9 @@ const BKGL={name:'WebGL',ok:false,R:null,root:null,world:null,iso:null,pool:null
   resize(){if(!this.ok)return; this.R.resolution=DPR; this.R.resize(Math.max(1,VW),Math.max(1,VH)); this.el.style.width=VW+'px'; this.el.style.height=VH+'px';
     this.rainA.width=this.rainB.width=VW; this.rainA.height=this.rainB.height=VH;},
   draw(){const z=cam.z; this.world.position.set(VW/2-cam.x*z,VH/2-cam.y*z); this.world.scale.set(z);
+    if(this.seaSrc!==PAT_SRC.sea){const t=this.texOf(PAT_SRC.sea); if(t){this.seaT=t; this.seaSrc=PAT_SRC.sea; for(const s of [...this.seaOut,...this.seaCk]){s.texture=t; s.tileScale.set(1/seaK());}}}
     for(const t of this.seaOut)t.tilePosition.set(FR.seaX,FR.seaY);
-    let si=0; for(const e of FR.seaCk){let t=this.seaCk[si]; if(!t){t=new PIXI.TilingSprite(this.seaT,CH,CH); t.tileScale.set(1/32); this.iso.addChild(t); this.seaCk.push(t);} si++; t.visible=true; t.position.set(e.cx*CH,e.cy*CH); t.tilePosition.set(FR.seaX,FR.seaY);}
+    let si=0; for(const e of FR.seaCk){let t=this.seaCk[si]; if(!t){t=new PIXI.TilingSprite(this.seaT,CH,CH); t.tileScale.set(1/seaK()); this.iso.addChild(t); this.seaCk.push(t);} si++; t.visible=true; t.position.set(e.cx*CH,e.cy*CH); t.tilePosition.set(FR.seaX,FR.seaY);}
     for(let i=si;i<this.seaCk.length;i++)this.seaCk[i].visible=false;
     const pool=this.pool.children, W=PIXI.Texture.WHITE, ADD=PIXI.BLEND_MODES.ADD, NOR=PIXI.BLEND_MODES.NORMAL; let used=0;
     for(let i=0;i<DL.n;i++){const p=DL.a[i]; let tex;
@@ -2181,10 +2235,13 @@ window.__flush=()=>BK.flush();
 const DIRS=DIRS4;
 const AS='#636b74', SW='#d8d1c3', CU='#aaa293';
 function roadTile(c,x,y){const nb=[carLink(x,y,0),carLink(x,y,1),carLink(x,y,2),carLink(x,y,3)], sw=.17;
-  const e=.012; c.fillStyle=AS; c.fillRect(x-e,y-e,1+2*e,1+2*e);
+  const e=.012, pc=ruaPeca(nb);
+  if(pc){c.save(); c.translate(x+.5,y+.5); c.rotate(pc.k*Math.PI/2); c.drawImage(pc.im,-.5-e,-.5-e,1+2*e,1+2*e); c.restore();}
+  else{c.fillStyle=AS; c.fillRect(x-e,y-e,1+2*e,1+2*e);
   c.fillStyle=SW; if(!nb[3])c.fillRect(x-e,y,1+2*e,sw); if(!nb[1])c.fillRect(x-e,y+1-sw,1+2*e,sw); if(!nb[2])c.fillRect(x,y-e,sw,1+2*e); if(!nb[0])c.fillRect(x+1-sw,y-e,sw,1+2*e);
   c.fillRect(x,y,sw,sw); c.fillRect(x+1-sw,y,sw,sw); c.fillRect(x,y+1-sw,sw,sw); c.fillRect(x+1-sw,y+1-sw,sw,sw);
   c.fillStyle=CU; if(!nb[3])c.fillRect(x+(nb[2]?0:sw),y+sw-.03,1-(nb[2]?0:sw)-(nb[0]?0:sw),.03); if(!nb[2])c.fillRect(x+sw-.03,y+(nb[3]?0:sw),.03,1-(nb[3]?0:sw)-(nb[1]?0:sw));
+  }
   const n=nb[0]+nb[1]+nb[2]+nb[3]; c.fillStyle='#f1ecdc';
   if(n<3){if((nb[0]||nb[2])&&!(nb[1]||nb[3])){c.fillRect(x+.08,y+.485,.3,.03);c.fillRect(x+.6,y+.485,.3,.03);}
     else if((nb[1]||nb[3])&&!(nb[0]||nb[2])){c.fillRect(x+.485,y+.08,.03,.3);c.fillRect(x+.485,y+.6,.03,.3);}}
@@ -2286,10 +2343,11 @@ function shadeRect(c,sx,sy,w,h,low){const m=shadeMaps(), M=N+1, x0=Math.max(0,sx
 function tileIsLow(x,y,cz){const m=shadeMaps(), M=N+1; return cz[0]<m.zt[y*M+x]||cz[1]<m.zt[y*M+x+1]||cz[2]<m.zt[(y+1)*M+x+1]||cz[3]<m.zt[(y+1)*M+x];}
 // solo já com a textura de "área não comprada" por cima (uma pintura só, sem emenda entre quadrados)
 const LPAT={};
-function lockPat(tr){if(LPAT[tr])return LPAT[tr]; const cv=document.createElement('canvas'); cv.width=cv.height=64; const c=cv.getContext('2d');
-  const p=SOIL_PAT(tr); p.setTransform(new DOMMatrix()); c.fillStyle=p; c.fillRect(0,0,64,64);
-  PAT.lock.setTransform(new DOMMatrix()); c.globalAlpha=.55; c.fillStyle=PAT.lock; c.fillRect(0,0,64,64);
-  return LPAT[tr]=g.createPattern(cv,'repeat');}
+function lockPat(tr){if(LPAT[tr])return LPAT[tr]; const p=SOIL_PAT(tr), k=p._k||32, S=p._src?p._src.width:64;
+  const cv=document.createElement('canvas'); cv.width=cv.height=S; const c=cv.getContext('2d');
+  p.setTransform(new DOMMatrix()); c.fillStyle=p; c.fillRect(0,0,S,S);
+  PAT.lock.setTransform(new DOMMatrix([k/32,0,0,k/32,0,0])); c.globalAlpha=p._k?.38:.55; c.fillStyle=PAT.lock; c.fillRect(0,0,S,S);
+  const out=g.createPattern(cv,'repeat'); if(p._k)out._k=p._k; return LPAT[tr]=out;}
 function cliffFace(c,pts,top,bot){const ys=pts.map(p=>p[1]), y0=Math.min(...ys), y1=Math.max(...ys);
   const gr=c.createLinearGradient(0,y0,0,y1); gr.addColorStop(0,top); gr.addColorStop(1,bot); poly(c,pts,gr);}
 // paredão de rocha: blocos irregulares em fileiras (as fileiras emendam entre quadrados), rachaduras,
@@ -2302,6 +2360,13 @@ function rockFace(c,e0,e1,zt0,zt1,zb0,zb1,lit,grass,n){const A=P(e0[0],e0[1],0),
   const seed=hsh(Math.round(e0[0]*2+e1[0]*3),Math.round(e0[1]*2+e1[1]*3),lit?17:29), r=rng(seed);
   const jit=(v,k)=>((hsh(Math.round(v[0])*7+k,Math.round(v[1])*13-k,91)%100)/100-.5)*8;
   c.save(); path(c,face); c.clip();
+  if(ROCHA.pat){// textura de rocha da imagem: u ao longo da borda (2 quadrados por repetição), v na vertical, emendando entre quadrados
+    const ex=(B[0]-A[0]), ey=(B[1]-A[1]), axis=Math.abs(e1[0]-e0[0])>Math.abs(e1[1]-e0[1])?'x':'y', t0=axis==='x'?e0[0]:e0[1], k=2/ROCHA.w;
+    const O=[A[0]-ex*t0, A[1]-ey*t0]; ROCHA.pat.setTransform(new DOMMatrix([ex*k,ey*k,0,72/ROCHA.w,O[0],O[1]]));
+    c.fillStyle=ROCHA.pat; c.fillRect(Math.min(...face.map(p=>p[0]))-2,Math.min(...face.map(p=>p[1]))-2,Math.abs(ex)+4,H+Math.abs(ey)+4);
+    if(!lit)poly(c,face,'rgba(20,24,30,.28)'); else poly(c,face,'rgba(255,240,210,.06)');
+    if(n>0)poly(c,face,'rgba(8,16,48,'+(.58*n).toFixed(3)+')');
+  } else {
   const zmin=Math.min(zb0,zb1), zmax=Math.max(zt0,zt1), RH=13;
   for(let k=Math.floor(zmin/RH);k*RH<zmax;k++){const lo=u=>k*RH+jit(e0,k)*(1-u)+jit(e1,k)*u, hi=u=>(k+1)*RH+jit(e0,k+1)*(1-u)+jit(e1,k+1)*u;
     const cuts=[0]; let u=.12+r()*.3; while(u<.9){cuts.push(u); u+=.25+r()*.35;} cuts.push(1);
@@ -2316,6 +2381,7 @@ function rockFace(c,e0,e1,zt0,zt1,zb0,zb1,lit,grass,n){const A=P(e0[0],e0[1],0),
   for(let k=0;k<1+(r()<.5);k++){const u=.15+r()*.7; let z=zt(u)-2, uu=u; c.beginPath(); c.moveTo(...pt(uu,z));
     while(z>zb(uu)+3&&z>zt(u)-H*.8){z-=4+r()*5; uu=clamp(uu+(r()-.5)*.08,0,1); c.lineTo(...pt(uu,z));}
     c.strokeStyle='rgba(28,24,20,.4)'; c.lineWidth=.9; c.stroke();}
+  }
   const y0=Math.min(face[2][1],face[3][1])-Math.min(H,26), y1=Math.max(face[2][1],face[3][1]);
   const gr=c.createLinearGradient(0,y0,0,y1); gr.addColorStop(0,'rgba(20,18,15,0)'); gr.addColorStop(1,'rgba(20,18,15,.38)'); poly(c,face,gr);
   c.restore();
@@ -2336,27 +2402,6 @@ function drawColumn(c,x,y,n){const i=y*N+x, cz=cornerZ(x,y), tr=G.tr[i];
     c.clip(); patT(pat,32); c.fillStyle=pat; c.fillRect(x-1,y-1,3,3); shadeRect(c,x-1,y-1,4,4,low); c.restore();}
   setIsoTile(c,x,y); tileTop(c,x,y);
   setW(c);}
-/* ---- Serra do fundo: picos de pedra com neve (enfeite) ---- */
-function drawPeak(c,pk,n){const r=rng(pk.k), [X,Y]=P(pk.x+.5,pk.y+.5,LV_P*HZ), W=pk.w, H=pk.h, sx=X+pk.sx*W, sy=Y-H;
-  // contorno: encosta esquerda e direita com quebras irregulares
-  const side=(x0,y0,x1,y1,k)=>{const out=[]; for(let i=1;i<k;i++){const t=i/k; out.push([x0+(x1-x0)*t+(r()-.5)*W*.06, y0+(y1-y0)*t+(r()-.5)*H*.05]);} return out;};
-  const L=[X-W/2,Y+8], R=[X+W/2,Y+8], S=[sx,sy];
-  const left=side(L[0],L[1],S[0],S[1],6), right=side(S[0],S[1],R[0],R[1],6);
-  const outline=[L,...left,S,...right,R];
-  const foot=[sx+W*(.08+r()*.1),Y+8], ridge=[S,...side(S[0],S[1],foot[0],foot[1],5),foot];
-  setW(c); poly(c,outline,nc('#706c66',n));
-  c.save(); path(c,outline); c.clip();
-  poly(c,[L,...left,...ridge],nc('#aaa59c',n));                         // lado no sol
-  for(let k=0;k<7;k++){const a=r(), t=.25+r()*.6, bx=L[0]+(R[0]-L[0])*a, by=sy+H*t;   // facetas
-    poly(c,[[bx,by],[bx+W*(.05+r()*.08),by+H*(.18+r()*.2)],[bx-W*(.03+r()*.06),by+H*(.22+r()*.2)]],nc(a<.45?'#bab5ac':'#615d58',n));}
-  const snowY=sy+H*(.34+r()*.1), zig=[]; for(let k=0;k<=10;k++){const t=k/10; zig.push([L[0]+(R[0]-L[0])*t, snowY+(k%2?H*.07:-H*.02)+r()*H*.06-(Math.abs(t-.5+pk.sx*.5))*H*.12]);}
-  const snow=[[L[0],sy-10],[R[0],sy-10],...zig.reverse()];
-  poly(c,snow,nc('#c7d1de',n));                                         // neve na sombra
-  c.save(); path(c,[L,...left,...ridge]); c.clip(); poly(c,snow,nc('#f5f8fc',n)); c.restore();
-  const gr=c.createLinearGradient(0,Y-H*.35,0,Y+8); gr.addColorStop(0,'rgba(40,50,45,0)'); gr.addColorStop(1,nc('#3f5a3a',n)); poly(c,outline,gr); // base esverdeada
-  c.restore();
-  c.strokeStyle='rgba(30,28,26,.35)'; c.lineWidth=1; c.beginPath(); c.moveTo(...ridge[0]); for(const p of ridge)c.lineTo(...p); c.stroke();}
-const peakBox=pk=>{const [X,Y]=P(pk.x+.5,pk.y+.5,LV_P*HZ); return [X-pk.w*.6-4,Y-pk.h-16,X+pk.w*.6+4,Y+12];};
 
 /* ---- 53-cache-por-pedaco.js ---- */
 /* ================= Cache do mapa por pedaço (8x8) =================
@@ -2368,8 +2413,10 @@ let ckPix=0, ckFrame=0;
 const RS_TIERS=[.25,.375,.5,.75,1,1.5,2,3];
 function rsFor(k){for(const t of RS_TIERS)if(t>=k*.92&&t<=QUAL.maxRs)return t; return Math.min(QUAL.maxRs,RS_TIERS[RS_TIERS.length-1]);}
 const hmix=(h,v)=>Math.imul(h^v,16777619)>>>0;
-function streetLampAt(x,y){const i=y*N+x; if(G.rd[i]!==1||hsh(x,y,9)%3||G.rp[i])return null;
-  for(let d=0;d<4;d++){if(carLink(x,y,d))continue; return [x+.5+DIRS[d][0]*.42,y+.5+DIRS[d][1]*.42,0,G.ht[i]*HZ];} return null;}
+// postes da rua em intervalo regular: só em trechos retos, a cada 3 quadrados, sempre do lado de baixo/direita da rua, em cima da calçada
+function streetLampAt(x,y){const i=y*N+x; if(G.rd[i]!==1||G.rp[i])return null; const nb=[0,1,2,3].map(d=>carLink(x,y,d));
+  let d; if(nb[0]&&nb[2]&&!nb[1]&&!nb[3]){if(x%3)return null; d=1;} else if(nb[1]&&nb[3]&&!nb[0]&&!nb[2]){if(y%3)return null; d=0;} else return null;
+  return [x+.5+DIRS[d][0]*.39,y+.5+DIRS[d][1]*.39,0,G.ht[i]*HZ];}
 function streetLamps(R){const out=[]; const [x0,y0,x1,y1]=R; for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++){const l=streetLampAt(x,y); if(l)out.push(l);}
   const now=Date.now(); for(const b of S.b)if(T[b.k].lamp&&now>=b.d)out.push([b.x+.5,b.y+.5,1,G.ht[b.y*N+b.x]*HZ]); return out;}
 // impressões digitais de cada camada do pedaço (mudou → refaz só aquela camada)
@@ -2379,7 +2426,7 @@ function ckHashes(cx,cy){let hb=17,hd=19,hs=23,hl=29; const x0=cx*CH,y0=cy*CH;
     hd=hmix(hd,t^(r<<12)); const q0=(y*2)*Q2+x*2, q1=q0+Q2; hd=hmix(hd,G.pv[q0]|G.pv[q0+1]<<4|G.pv[q1]<<8|G.pv[q1+1]<<12);
     hs=hmix(hs,t^(r<<12)^(G.ob[i]<<20)^(D.under[i]<<24)); hs=hmix(hs,G.fc[q0]|G.fc[q0+1]<<4|G.fc[q1]<<8|G.fc[q1+1]<<12);
     hl=hmix(hl,(G.rd[i]|(G.rp[i]<<3)|(G.ht[i]<<8))+(i<<12));}
-  hb=hmix(hb,S.ul[cy*NC+cx]?7:3); hs=hmix(hs,(S.seed|0)^(cx*31+cy)); hs=hmix(hs,PORTAL.x>=x0&&PORTAL.x<x0+CH&&PORTAL.y>=y0&&PORTAL.y<y0+CH?11:1);
+  hb=hmix(hb,S.ul[cy*NC+cx]?7:3); hs=hmix(hs,(S.seed|0)^(cx*31+cy)^(Object.keys(IMGP).length<<12)); hs=hmix(hs,PORTAL.x>=x0&&PORTAL.x<x0+CH&&PORTAL.y>=y0&&PORTAL.y<y0+CH?11:1);
   const now=Date.now(); for(const b of (D.ckB[cy*NC+cx]||[])){const t=T[b.k]; if(!t.glow&&!t.lamp)continue; hl=hmix(hl,b.i*31+b.x*7+b.y*13+(b.f?5:0)+(now>=b.d?1:0));}
   return [hb,hd,hs,hl];}
 // cria uma camada desenhando no retângulo do mundo [bx0,by0]-[bx1,by1] com resolução rs
@@ -2410,7 +2457,7 @@ function drawBase(c,cx,cy){const x0=cx*CH,y0=cy*CH; setIso(c); const e=.03;
     for(const code of [0,3,4,5,6,7]){c.beginPath(); let any=false;
       for(let y=y0;y<y0+CH;y++)for(let x=x0;x<x0+CH;x++){const i=y*N+x; if(isWater(i))continue; if((G.tr[i]===code)||(code===0&&G.tr[i]===0)){c.rect(x-e,y-e,1+2*e,1+2*e); any=true;}}
       if(any){const p=SOIL_PAT(code); patT(p,32); c.fillStyle=p; c.fill();}}
-    if(!S.ul[cy*NC+cx]){patT(PAT.lock,32); c.globalAlpha=.55; c.fillStyle=PAT.lock; c.fillRect(x0-e,y0-e,CH+2*e,CH+2*e); c.globalAlpha=1;}
+    if(!S.ul[cy*NC+cx]){patT(PAT.lock,32); c.globalAlpha=PAT.grass._k?.38:.55; c.fillStyle=PAT.lock; c.fillRect(x0-e,y0-e,CH+2*e,CH+2*e); c.globalAlpha=1;}
     c.save(); c.beginPath(); c.rect(x0-e,y0-e,CH+2*e,CH+2*e); c.clip(); shadeRect(c,x0-1,y0-1,CH+3,CH+3,true); c.restore(); setIso(c);
     c.globalCompositeOperation='destination-out'; c.fillStyle='#000'; c.beginPath(); let wat=false;
     for(let y=y0-1;y<=y0+CH;y++)for(let x=x0-1;x<=x0+CH;x++){if(inMap(x,y)&&isWater(y*N+x)){c.rect(x,y,1,1); wat=true;}}
@@ -2427,7 +2474,7 @@ function drawDetail(c,cx,cy){const x0=cx*CH,y0=cy*CH, owned=!!S.ul[cy*NC+cx]; se
     const br=[]; for(let y=y0;y<y0+CH;y++)for(let x=x0;x<x0+CH;x++)if(G.rd[y*N+x]===2)br.push([x,y]); br.sort((a,b)=>a[0]+a[1]-b[0]-b[1]);
     for(const [x,y] of br)bridgeTile(c,x,y,false);
     setIso(c); if(!owned){c.strokeStyle='rgba(255,255,255,.22)'; c.lineWidth=1.2/(TGT.k*32); c.strokeRect(x0,y0,CH,CH);}
-    setW(c); if(cy===NC-1){const xa=x0,xb=Math.min(x0+CH,52); if(xb>xa)poly(c,[P(xa,N),P(xb,N),P(xb,N,-20),P(xa,N,-20)],'#7a5a3a');}
+    setW(c); if(cy===NC-1){const xa=x0,xb=Math.min(x0+CH,Math.floor(coastX(N-1))-3); if(xb>xa)poly(c,[P(xa,N),P(xb,N),P(xb,N,-20),P(xa,N,-20)],'#7a5a3a');}
     if(cx===0)poly(c,[P(0,y0),P(0,y0+CH),P(0,y0+CH,-20),P(0,y0,-20)],'#5f4429');}
 function qHasPv(x,y){const a=(y*2)*Q2+x*2,b=a+Q2; return G.pv[a]||G.pv[a+1]||G.pv[b]||G.pv[b+1];}
 function bakeFoam(cx,cy,rs){const x0=cx*CH,y0=cy*CH, bb=chunkBox(cx,cy); const land=(x,y)=>inMap(x,y)&&!isWater(y*N+x);
@@ -2448,7 +2495,7 @@ function bakeLights(cx,cy,rs,which){const x0=cx*CH,y0=cy*CH, gl=[]; const now=Da
   for(const b of (D.ckB[cy*NC+cx]||[])){const t=T[b.k]; if(now<b.d)continue; const zb=G.ht[b.y*N+b.x]*HZ;
     if(t.lamp){if(which===0){const [px,py]=P(b.x+.5,b.y+.5,zb); gl.push([px,py,46,23,'255,200,110',.55]);} else{const [px,py]=P(b.x+.5,b.y+.5,zb+40); gl.push([px,py,16,16,'255,230,160',.85]);}}
     if(t.glow&&which===1)for(const [u,v,z,r,rgb] of t.glow){const [wx,wy]=loc(b,u,v); const [px,py]=P(wx,wy,z+zb); gl.push([px,py,r,r,rgb,.8]);}}
-  if(which===1&&PORTAL.x>=x0&&PORTAL.x<x0+CH&&PORTAL.y>=y0&&PORTAL.y<y0+CH){for(const dy of [-.62,.62]){const [px,py]=P(PORTAL.x+1.08,PORTAL.y+.5+dy,23); gl.push([px,py,12,12,'255,215,150',.9]);}
+  if(which===1&&!IMGP['portal-tunel']&&PORTAL.x>=x0&&PORTAL.x<x0+CH&&PORTAL.y>=y0&&PORTAL.y<y0+CH){for(const dy of [-.62,.62]){const [px,py]=P(PORTAL.x+1.08,PORTAL.y+.5+dy,23); gl.push([px,py,12,12,'255,215,150',.9]);}
     const [tx,ty]=P(PORTAL.x+1,PORTAL.y+.5,10); gl.push([tx,ty,16,12,'255,210,140',.5]);}
   if(!gl.length)return null; let a=[1e9,1e9,-1e9,-1e9]; for(const [px,py,rx,ry] of gl){a[0]=Math.min(a[0],px-rx);a[1]=Math.min(a[1],py-ry);a[2]=Math.max(a[2],px+rx);a[3]=Math.max(a[3],py+ry);}
   return mkLayer(a[0]-1,a[1]-1,a[2]+1,a[3]+1,Math.min(rs,1.5),c=>{setW(c); c.globalCompositeOperation='lighter'; for(const [px,py,rx,ry,rgb,al] of gl)glow(c,px,py,rx,ry,rgb,al);});}
@@ -2463,7 +2510,7 @@ function ckItems(cx,cy){const x0=cx*CH,y0=cy*CH, out=[];
     for(const [a,b] of [[0,0],[1,0],[0,1],[1,1]]){const qx=x*2+a,qy=y*2+b; if(G.fc[qy*Q2+qx])out.push({d:el?x+y+1.01+(a+b)*.01:(qx+.5)/2+(qy+.5)/2+.02,t:3,qx,qy,x,y});}
     const l=streetLampAt(x,y); if(l)out.push({d:el?x+y+1.01:l[0]+l[1]+.01,t:4,lx:l[0],ly:l[1],z:l[3],x,y});
     if(x===PORTAL.x&&y===PORTAL.y)out.push({d:x+y+1.4,t:5,x,y});}
-  for(const pk of peaks())if(Math.floor(pk.x/CH)===cx&&Math.floor(pk.y/CH)===cy)out.push({d:pk.x+pk.y+1.5,t:6,x:pk.x,y:pk.y,pk});
+  for(const dc of DECOR){const [kx,ky]=decorChunk(dc); if(kx===cx&&ky===cy)out.push({d:decorD(dc),t:6,x:dc.x,y:dc.y,dc});}
   return out;}
 function itemBox(it){const x=it.x,y=it.y;
   switch(it.t){case 0:{const cz=cornerZ(x,y); return tileBox(x,y,x+1,y+1,-22,Math.max(...cz)+2);}
@@ -2472,8 +2519,8 @@ function itemBox(it){const x=it.x,y=it.y;
     case 2:return tileBox(x,y,x+1,y+1,-8,52);
     case 3:{const z=hAt((it.qx+.5)/2,(it.qy+.5)/2); return tileBox(it.qx/2,it.qy/2,it.qx/2+.5,it.qy/2+.5,z-2,z+16);}
     case 4:{const [X,Y]=P(it.lx,it.ly,it.z); return [X-7,Y-36,X+10,Y+4];}
-    case 5:return tileBox(x-2,y-2,x+2,y+3,-4,64);
-    case 6:return peakBox(it.pk);}
+    case 5:{const L=PORTAL_LOTE; return decorSprite('portal-tunel',false)?decorBox({k:'portal-tunel',x:L.x,y:L.y,f:false}):tileBox(x-2,y-2,x+2,y+3,-4,64);}
+    case 6:return decorBox(it.dc);}
   return tileBox(x,y,x+1,y+1,0,40);}
 function drawItem(c,it,n){const x=it.x,y=it.y;
   switch(it.t){case 0:drawColumn(c,x,y,n);break;
@@ -2481,8 +2528,8 @@ function drawItem(c,it,n){const x=it.x,y=it.y;
     case 2:setW(c); bridgeTile(c,x,y,true,n);break;
     case 3:setW(c); drawFence(c,it.qx,it.qy,n);break;
     case 4:setW(c); drawLampPost(c,it.lx,it.ly,n,it.z);break;
-    case 5:setW(c); drawPortal(c,n);break;
-    case 6:drawPeak(c,it.pk,n);break;}}
+    case 5:{const L=PORTAL_LOTE, dc={k:'portal-tunel',x:L.x,y:L.y,f:false}; if(decorSprite(dc.k,false))drawDecor(c,dc,n); else{setW(c); drawPortal(c,n);} break;}
+    case 6:drawDecor(c,it.dc,n);break;}}
 function bakeGroups(cx,cy,rs,night){const items=ckItems(cx,cy), m=new Map();
   for(const it of items){const key=it.d<-1e5?UNDER_D(cx,cy):Math.round(it.d*10)/10; let gr=m.get(key); if(!gr)m.set(key,gr={d:key,items:[]}); gr.items.push(it);}
   const out=[...m.values()].sort((a,b)=>a.d-b.d);
@@ -2770,7 +2817,7 @@ function drawMarks(c){
 const VIEWS=[['happy','Felicidade'],['poll','Poluição'],['com','Comércio'],['sau','Saúde'],['edu','Educação'],['fun','Diversão'],['fe','Fé'],['fire','Bombeiros'],['tour','Turismo'],['set','Bairros']];
 let VIEWC=null, viewKey='';
 function viewImg(){const key=VIEW+'|'+D.ver; if(VIEWC&&viewKey===key)return VIEWC; if(VIEWC)BK.free(VIEWC);
-  const c2=document.createElement('canvas'); c2.width=c2.height=256; const c=c2.getContext('2d'); c.scale(4,4); const now=Date.now(); const k=VIEW;
+  const c2=document.createElement("canvas"); c2.width=c2.height=N*4; const c=c2.getContext("2d"); c.scale(4,4); const now=Date.now(); const k=VIEW;
   const rect=(b,i)=>c.fillRect(b.x+i,b.y+i,fw(b)-2*i,fh(b)-2*i);
   if(NEED_I[k]!=null){const col=NEEDS[NEED_I[k]][2]; c.fillStyle=col; c.globalAlpha=.2;
     for(const b of S.b){if(now<b.d)continue; const t=T[b.k]; let r=t.serve&&t.serve[k]; if(!r&&k==='com'&&t.cat==='biz')r=5; if(!r)continue; c.fillRect(b.x-r,b.y-r,fw(b)+2*r,fh(b)+2*r);}
@@ -2875,7 +2922,7 @@ function cloudShadows(now,W,vx,vy,vw,vh){if(W.cloud<.05)return; const t=now/1000
  O movimento é sempre contínuo de um ponto ao outro; aparecem e somem com um esmaecer suave. */
 let peds=[], pedGraph=null, pedGraphVer=-1;
 const pedCross=new Set();
-const PO=.085, PCORN=[[PO,PO],[1-PO,PO],[1-PO,1-PO],[PO,1-PO]], PSIDE=[[1,2],[2,3],[0,3],[0,1]];
+const PO=.11, PCORN=[[PO,PO],[1-PO,PO],[1-PO,1-PO],[PO,1-PO]], PSIDE=[[1,2],[2,3],[0,3],[0,1]];
 function pedNodePos(id){if(id<4*N*N){const t=id>>2,k=id&3; return [(t%N)+PCORN[k][0],((t/N)|0)+PCORN[k][1]];} const q=id-4*N*N; return [((q%Q2)+.5)/2,(((q/Q2)|0)+.5)/2];}
 function buildPedGraph(){const adj=new Map(), add=(a,b,cr)=>{let l=adj.get(a); if(!l)adj.set(a,l=[]); if(!l.some(e=>e.to===b))l.push({to:b,cr}); let m=adj.get(b); if(!m)adj.set(b,m=[]); if(!m.some(e=>e.to===a))m.push({to:a,cr});};
   for(let y=0;y<N;y++)for(let x=0;x<N;x++){if(!isCarRd(x,y))continue; const t=y*N+x, base=t*4, nb=[carLink(x,y,0),carLink(x,y,1),carLink(x,y,2),carLink(x,y,3)], n=nb[0]+nb[1]+nb[2]+nb[3];
@@ -2982,11 +3029,16 @@ function pedAtlas(o){let A=PATL.get(o); if(A)return A; const ot=outfit(o); const
 /* ================= Extras animados: roda-gigante, eólicas, zoológico, aviões, iate, farol, fogo e fumaça =================
  Tudo vira sprite pronto (por quadro de animação) e entra na lista de desenho ordenada. */
 function extraItems(items,now,n,vis){const nn=n>.5?1:0;
-  // neblina passando pela serra
-  const fogC=n>.5?'120,135,165':'236,241,246';
-  for(const pk of peaks()){const r=pk.k%97/97; if(r<.35)continue; const [X,Y]=P(pk.x+.5,pk.y+.5,LV_P*HZ), t=now/1000;
-    for(let q=0;q<2;q++){const w=pk.w*(1.1+q*.4), h=w*.32, dx=Math.sin(t*.05+r*9+q*2)*pk.w*.35, cy=Y-pk.h*(.18+q*.22);
-      items.push({d:pk.x+pk.y+1.6+q*.01,t:9,f:()=>pImg(glowImg(fogC),X+dx-w/2,cy-h/2,w,h,(.32+.12*Math.sin(t*.07+q+r*5))*(1-.4*n))});}}
+  // neblina passando pela serra (imagens neblina-1/2; se não carregaram, mancha suave)
+  const t=now/1000, pk=peaks();
+  for(let i=0;i<pk.length;i++){if(i%2)continue; const p=pk[i], l=decorLote(p), [X,Y]=P(p.x+l.w/2,p.y+l.h/2,0), r=(i*37%97)/97;
+    const im=IMGP[i%4?'neblina-1':'neblina-2'], w=(l.w+l.h)*30*(1+r*.5), h=w*.42, dx=Math.sin(t*.04+r*9)*w*.3, cy=Y-(l.w+l.h)*14*(.7+r*.5);
+    const al=(.55+.2*Math.sin(t*.06+r*5))*(1-.5*n);
+    items.push({d:decorD(p)+.4,t:9,f:()=>{if(im)pImg(im,X+dx-w/2,cy-h/2,w,h,al); else pImg(glowImg(n>.5?'120,135,165':'236,241,246'),X+dx-w/2,cy-h/2,w,h,al*.6);}});}
+  // cachoeira da nascente do rio
+  {const [X,Y]=P(RIVER[0][0]+.5,RIVER[0][1]+.3,0), H=46;
+    items.push({d:RIVER[0][0]+RIVER[0][1]+.2,t:9,f:()=>{for(let k=0;k<5;k++){const ph=((t*1.6+k*.37)%1); pImg(glowImg('235,248,255'),X-7+k*3.2,Y-H+ph*H*.85,4,10,(1-ph)*.75*(1-.4*n));}
+      pImg(glowImg('255,255,255'),X-14,Y-8,28,12,.55*(1-.4*n));}});}
   for(const b of S.b){const t=T[b.k]; if(!vis(b,fw(b),fh(b)))continue; const done=now>=b.d;
     const base=b.x+b.y+(fw(b)+fh(b))/2+.001, zb=G.ht[b.y*N+b.x]*HZ;
     if(done&&t.anim==='ferris'){const [hx,hy]=P(b.x+fw(b)/2,b.y+fh(b)/2,zb+2+ferrisR()+8); const st=Math.floor(now/120)%24;
@@ -3279,7 +3331,7 @@ function openQuests(soft){const act=activeQuests(); let h='';
 function openMenu(){const cyc=[['auto','Automático'],['day','Sempre dia'],['night','Sempre noite']];
   const h='<div class="help"><p><b>Casas</b> trazem moradores e pagam aluguel. Cada classe (baixa, média, alta) depende da felicidade: moradores querem <b>comércio, saúde, educação, diversão e fé</b> por perto. Quanto mais desejos atendidos, maior o aluguel.</p>'+
   '<p><b>Comércios</b> precisam de mercadorias, que vêm das plantações e do trem. <b>Serviços</b> abrem vagas de moradores e atendem desejos num raio. <b>Monumentos</b> pedem madeira e pedra, que saem dos obstáculos.</p>'+
-  '<p>Os botões redondos da direita abrem os pincéis: <b>Ruas</b> (rua, ponte, trilho), <b>Terreno</b> (elevar, rampa, água, tipo de chão) e <b>Enfeitar</b> (calçadas e muros). Arraste para pintar; dois dedos ou o botão direito do mouse movem o mapa.</p>'+
+  '<p>Os botões redondos da direita abrem os pincéis: <b>Ruas</b> (rua, ponte, trilho), <b>Terreno</b> (elevar, rampa, água, tipo de chão) e <b>Decoração</b> (calçadas e muros). Arraste para pintar; dois dedos ou o botão direito do mouse movem o mapa.</p>'+
   '<p><b>Indústria</b> transforma madeira, pedra, aço e borracha em ferramentas, pneus e carros, que vendem em lojas e são pedidos em prédios grandes. O <b>trem</b> só funciona com trilho até o túnel, a oeste.</p>'+
   '<p>Toque em árvores, pedras e arbustos para limpar. Na hora de construir, <b>Girar</b> (ou a tecla R) vira o prédio, <b>Em linha</b> constrói vários enfeites seguidos e <b>Copiar</b> (no painel do prédio) repete o mesmo prédio. Nos pincéis, <b>Desfazer</b> volta a última pincelada.</p>'+
   '<p><b>Cidade</b> traz pedidos dos moradores, leis, pesquisa do Campus e gráficos. <b>Poluição</b> vem da indústria, do trânsito e do porto; parques, árvores, leis e educação limpam. Fora da área dos bombeiros podem acontecer incêndios leves.</p></div>'+
@@ -3394,7 +3446,7 @@ $('#bMenu').onclick=()=>{if(sheetKind==='menu')closeSheet(); else openMenu();};
 $('#hLvl').onclick=()=>{toast('Nível '+S.lv+' · faltam '+fmtN(cumXp(S.lv+1)-S.xp)+' XP para o próximo');};
 
 function resize(){const r=$('#app').getBoundingClientRect(); VW=r.width; VH=r.height; DPR=Math.min(QUAL.dprCap,window.devicePixelRatio||1); cv.width=Math.round(VW*DPR); cv.height=Math.round(VH*DPR); BK.resize();}
-function centerStart(){const [x,y]=P(24,21); cam.x=x; cam.y=y; cam.z=clamp(Math.min(VW/520,VH/440),.6,1.5); clampCam();}
+function centerStart(){const [x,y]=P(44,41); cam.x=x; cam.y=y; cam.z=clamp(Math.min(VW/520,VH/440),.6,1.5); clampCam();}
 function afterLoad(){derive(); refreshQuests(); closeSheet(); setMode({t:'idle'}); centerStart(); updateHud();}
 setInterval(()=>{if(!S)return; systemsTick(Date.now()); derive(); updateHud(); updateWx();
   if(sheetKind==='info'&&sheetData){const b=byId(sheetData.id); if(!b)closeSheet(); else if(infoKey(b)!==sheetKey)openInfo(b); else liveTimers();}
@@ -3805,14 +3857,18 @@ function renameBox(){const m=$('#mcard'); m.innerHTML='<h3>Nome da cidade</h3><p
   const ok=()=>{const nm=inp.value.trim(); if(nm){S.name=nm.slice(0,32); markDirty(); updateWx(); toast('A cidade agora se chama '+S.name);} closeModal(); if(sheetKind==='menu')openMenu();};
   $('#mOk').onclick=ok; $('#mNo').onclick=closeModal; inp.onkeydown=e=>{if(e.key==='Enter')ok(); e.stopPropagation();};}
 
+// aviso do mapa novo (o save do mapa antigo fica guardado no aparelho)
+function showNewMap(){$('#mcard').innerHTML='<h3>Mapa novo!</h3><p style="text-align:left;font-size:14.5px;line-height:1.45">A cidade agora fica num mapa maior, com serra de montanhas, dois platôs com estrada, rio com cachoeira, lago, praia e deserto com um arco de pedra. As áreas para comprar ficaram maiores (12×12) e a área inicial também (24×24).<br><br>Como o mapa mudou inteiro, a cidade começou de novo. A cidade antiga ficou guardada neste aparelho.</p><div class="acts"><button class="pill gold" id="nmOk">Vamos lá</button></div>';
+  $('#modal').hidden=false; $('#nmOk').onclick=closeModal;}
+
 /* ---- 99-boot.js ---- */
 /* ================= Início do jogo (sempre por último) ================= */
 applyQual(); initPats(); bootState(); resize(); if(wantGL())switchBackend('webgl',true); window.__backendName=()=>BK.name; derive(); refreshQuests(); centerStart(); updateHud(); requestAnimationFrame(loop);
-loadArtLocal(); loadAllArt();
+loadArtLocal(); loadBuiltinImages(); loadAllArt();
 if(migratedMsg!=null)setTimeout(showMigrated,300); else if(!loadLocal())setTimeout(()=>toast('Toque nas bolhas sobre os prédios para coletar'),600);
 saveNow(); initCloud();
 refreshOrders(); refreshCh(); updateHud(); updateWx();
-if(upgradedV2||upgradedV3)setTimeout(showUpgrade,400);
+if(oldMapSaved)setTimeout(showNewMap,400); else if(upgradedV2||upgradedV3)setTimeout(showUpgrade,400);
 setInterval(()=>{if(!S)return; refreshOrders(); refreshCh(); if(sheetKind==='city')openCity(null,true); else if(sheetKind==='city')liveTimers();},2000);
 
 </script>

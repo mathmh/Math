@@ -7,8 +7,10 @@ let ckPix=0, ckFrame=0;
 const RS_TIERS=[.25,.375,.5,.75,1,1.5,2,3];
 function rsFor(k){for(const t of RS_TIERS)if(t>=k*.92&&t<=QUAL.maxRs)return t; return Math.min(QUAL.maxRs,RS_TIERS[RS_TIERS.length-1]);}
 const hmix=(h,v)=>Math.imul(h^v,16777619)>>>0;
-function streetLampAt(x,y){const i=y*N+x; if(G.rd[i]!==1||hsh(x,y,9)%3||G.rp[i])return null;
-  for(let d=0;d<4;d++){if(carLink(x,y,d))continue; return [x+.5+DIRS[d][0]*.42,y+.5+DIRS[d][1]*.42,0,G.ht[i]*HZ];} return null;}
+// postes da rua em intervalo regular: só em trechos retos, a cada 3 quadrados, sempre do lado de baixo/direita da rua, em cima da calçada
+function streetLampAt(x,y){const i=y*N+x; if(G.rd[i]!==1||G.rp[i])return null; const nb=[0,1,2,3].map(d=>carLink(x,y,d));
+  let d; if(nb[0]&&nb[2]&&!nb[1]&&!nb[3]){if(x%3)return null; d=1;} else if(nb[1]&&nb[3]&&!nb[0]&&!nb[2]){if(y%3)return null; d=0;} else return null;
+  return [x+.5+DIRS[d][0]*.39,y+.5+DIRS[d][1]*.39,0,G.ht[i]*HZ];}
 function streetLamps(R){const out=[]; const [x0,y0,x1,y1]=R; for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++){const l=streetLampAt(x,y); if(l)out.push(l);}
   const now=Date.now(); for(const b of S.b)if(T[b.k].lamp&&now>=b.d)out.push([b.x+.5,b.y+.5,1,G.ht[b.y*N+b.x]*HZ]); return out;}
 // impressões digitais de cada camada do pedaço (mudou → refaz só aquela camada)
@@ -18,7 +20,7 @@ function ckHashes(cx,cy){let hb=17,hd=19,hs=23,hl=29; const x0=cx*CH,y0=cy*CH;
     hd=hmix(hd,t^(r<<12)); const q0=(y*2)*Q2+x*2, q1=q0+Q2; hd=hmix(hd,G.pv[q0]|G.pv[q0+1]<<4|G.pv[q1]<<8|G.pv[q1+1]<<12);
     hs=hmix(hs,t^(r<<12)^(G.ob[i]<<20)^(D.under[i]<<24)); hs=hmix(hs,G.fc[q0]|G.fc[q0+1]<<4|G.fc[q1]<<8|G.fc[q1+1]<<12);
     hl=hmix(hl,(G.rd[i]|(G.rp[i]<<3)|(G.ht[i]<<8))+(i<<12));}
-  hb=hmix(hb,S.ul[cy*NC+cx]?7:3); hs=hmix(hs,(S.seed|0)^(cx*31+cy)); hs=hmix(hs,PORTAL.x>=x0&&PORTAL.x<x0+CH&&PORTAL.y>=y0&&PORTAL.y<y0+CH?11:1);
+  hb=hmix(hb,S.ul[cy*NC+cx]?7:3); hs=hmix(hs,(S.seed|0)^(cx*31+cy)^(Object.keys(IMGP).length<<12)); hs=hmix(hs,PORTAL.x>=x0&&PORTAL.x<x0+CH&&PORTAL.y>=y0&&PORTAL.y<y0+CH?11:1);
   const now=Date.now(); for(const b of (D.ckB[cy*NC+cx]||[])){const t=T[b.k]; if(!t.glow&&!t.lamp)continue; hl=hmix(hl,b.i*31+b.x*7+b.y*13+(b.f?5:0)+(now>=b.d?1:0));}
   return [hb,hd,hs,hl];}
 // cria uma camada desenhando no retângulo do mundo [bx0,by0]-[bx1,by1] com resolução rs
@@ -49,7 +51,7 @@ function drawBase(c,cx,cy){const x0=cx*CH,y0=cy*CH; setIso(c); const e=.03;
     for(const code of [0,3,4,5,6,7]){c.beginPath(); let any=false;
       for(let y=y0;y<y0+CH;y++)for(let x=x0;x<x0+CH;x++){const i=y*N+x; if(isWater(i))continue; if((G.tr[i]===code)||(code===0&&G.tr[i]===0)){c.rect(x-e,y-e,1+2*e,1+2*e); any=true;}}
       if(any){const p=SOIL_PAT(code); patT(p,32); c.fillStyle=p; c.fill();}}
-    if(!S.ul[cy*NC+cx]){patT(PAT.lock,32); c.globalAlpha=.55; c.fillStyle=PAT.lock; c.fillRect(x0-e,y0-e,CH+2*e,CH+2*e); c.globalAlpha=1;}
+    if(!S.ul[cy*NC+cx]){patT(PAT.lock,32); c.globalAlpha=PAT.grass._k?.38:.55; c.fillStyle=PAT.lock; c.fillRect(x0-e,y0-e,CH+2*e,CH+2*e); c.globalAlpha=1;}
     c.save(); c.beginPath(); c.rect(x0-e,y0-e,CH+2*e,CH+2*e); c.clip(); shadeRect(c,x0-1,y0-1,CH+3,CH+3,true); c.restore(); setIso(c);
     c.globalCompositeOperation='destination-out'; c.fillStyle='#000'; c.beginPath(); let wat=false;
     for(let y=y0-1;y<=y0+CH;y++)for(let x=x0-1;x<=x0+CH;x++){if(inMap(x,y)&&isWater(y*N+x)){c.rect(x,y,1,1); wat=true;}}
@@ -66,7 +68,7 @@ function drawDetail(c,cx,cy){const x0=cx*CH,y0=cy*CH, owned=!!S.ul[cy*NC+cx]; se
     const br=[]; for(let y=y0;y<y0+CH;y++)for(let x=x0;x<x0+CH;x++)if(G.rd[y*N+x]===2)br.push([x,y]); br.sort((a,b)=>a[0]+a[1]-b[0]-b[1]);
     for(const [x,y] of br)bridgeTile(c,x,y,false);
     setIso(c); if(!owned){c.strokeStyle='rgba(255,255,255,.22)'; c.lineWidth=1.2/(TGT.k*32); c.strokeRect(x0,y0,CH,CH);}
-    setW(c); if(cy===NC-1){const xa=x0,xb=Math.min(x0+CH,52); if(xb>xa)poly(c,[P(xa,N),P(xb,N),P(xb,N,-20),P(xa,N,-20)],'#7a5a3a');}
+    setW(c); if(cy===NC-1){const xa=x0,xb=Math.min(x0+CH,Math.floor(coastX(N-1))-3); if(xb>xa)poly(c,[P(xa,N),P(xb,N),P(xb,N,-20),P(xa,N,-20)],'#7a5a3a');}
     if(cx===0)poly(c,[P(0,y0),P(0,y0+CH),P(0,y0+CH,-20),P(0,y0,-20)],'#5f4429');}
 function qHasPv(x,y){const a=(y*2)*Q2+x*2,b=a+Q2; return G.pv[a]||G.pv[a+1]||G.pv[b]||G.pv[b+1];}
 function bakeFoam(cx,cy,rs){const x0=cx*CH,y0=cy*CH, bb=chunkBox(cx,cy); const land=(x,y)=>inMap(x,y)&&!isWater(y*N+x);
@@ -87,7 +89,7 @@ function bakeLights(cx,cy,rs,which){const x0=cx*CH,y0=cy*CH, gl=[]; const now=Da
   for(const b of (D.ckB[cy*NC+cx]||[])){const t=T[b.k]; if(now<b.d)continue; const zb=G.ht[b.y*N+b.x]*HZ;
     if(t.lamp){if(which===0){const [px,py]=P(b.x+.5,b.y+.5,zb); gl.push([px,py,46,23,'255,200,110',.55]);} else{const [px,py]=P(b.x+.5,b.y+.5,zb+40); gl.push([px,py,16,16,'255,230,160',.85]);}}
     if(t.glow&&which===1)for(const [u,v,z,r,rgb] of t.glow){const [wx,wy]=loc(b,u,v); const [px,py]=P(wx,wy,z+zb); gl.push([px,py,r,r,rgb,.8]);}}
-  if(which===1&&PORTAL.x>=x0&&PORTAL.x<x0+CH&&PORTAL.y>=y0&&PORTAL.y<y0+CH){for(const dy of [-.62,.62]){const [px,py]=P(PORTAL.x+1.08,PORTAL.y+.5+dy,23); gl.push([px,py,12,12,'255,215,150',.9]);}
+  if(which===1&&!IMGP['portal-tunel']&&PORTAL.x>=x0&&PORTAL.x<x0+CH&&PORTAL.y>=y0&&PORTAL.y<y0+CH){for(const dy of [-.62,.62]){const [px,py]=P(PORTAL.x+1.08,PORTAL.y+.5+dy,23); gl.push([px,py,12,12,'255,215,150',.9]);}
     const [tx,ty]=P(PORTAL.x+1,PORTAL.y+.5,10); gl.push([tx,ty,16,12,'255,210,140',.5]);}
   if(!gl.length)return null; let a=[1e9,1e9,-1e9,-1e9]; for(const [px,py,rx,ry] of gl){a[0]=Math.min(a[0],px-rx);a[1]=Math.min(a[1],py-ry);a[2]=Math.max(a[2],px+rx);a[3]=Math.max(a[3],py+ry);}
   return mkLayer(a[0]-1,a[1]-1,a[2]+1,a[3]+1,Math.min(rs,1.5),c=>{setW(c); c.globalCompositeOperation='lighter'; for(const [px,py,rx,ry,rgb,al] of gl)glow(c,px,py,rx,ry,rgb,al);});}
@@ -102,7 +104,7 @@ function ckItems(cx,cy){const x0=cx*CH,y0=cy*CH, out=[];
     for(const [a,b] of [[0,0],[1,0],[0,1],[1,1]]){const qx=x*2+a,qy=y*2+b; if(G.fc[qy*Q2+qx])out.push({d:el?x+y+1.01+(a+b)*.01:(qx+.5)/2+(qy+.5)/2+.02,t:3,qx,qy,x,y});}
     const l=streetLampAt(x,y); if(l)out.push({d:el?x+y+1.01:l[0]+l[1]+.01,t:4,lx:l[0],ly:l[1],z:l[3],x,y});
     if(x===PORTAL.x&&y===PORTAL.y)out.push({d:x+y+1.4,t:5,x,y});}
-  for(const pk of peaks())if(Math.floor(pk.x/CH)===cx&&Math.floor(pk.y/CH)===cy)out.push({d:pk.x+pk.y+1.5,t:6,x:pk.x,y:pk.y,pk});
+  for(const dc of DECOR){const [kx,ky]=decorChunk(dc); if(kx===cx&&ky===cy)out.push({d:decorD(dc),t:6,x:dc.x,y:dc.y,dc});}
   return out;}
 function itemBox(it){const x=it.x,y=it.y;
   switch(it.t){case 0:{const cz=cornerZ(x,y); return tileBox(x,y,x+1,y+1,-22,Math.max(...cz)+2);}
@@ -111,8 +113,8 @@ function itemBox(it){const x=it.x,y=it.y;
     case 2:return tileBox(x,y,x+1,y+1,-8,52);
     case 3:{const z=hAt((it.qx+.5)/2,(it.qy+.5)/2); return tileBox(it.qx/2,it.qy/2,it.qx/2+.5,it.qy/2+.5,z-2,z+16);}
     case 4:{const [X,Y]=P(it.lx,it.ly,it.z); return [X-7,Y-36,X+10,Y+4];}
-    case 5:return tileBox(x-2,y-2,x+2,y+3,-4,64);
-    case 6:return peakBox(it.pk);}
+    case 5:{const L=PORTAL_LOTE; return decorSprite('portal-tunel',false)?decorBox({k:'portal-tunel',x:L.x,y:L.y,f:false}):tileBox(x-2,y-2,x+2,y+3,-4,64);}
+    case 6:return decorBox(it.dc);}
   return tileBox(x,y,x+1,y+1,0,40);}
 function drawItem(c,it,n){const x=it.x,y=it.y;
   switch(it.t){case 0:drawColumn(c,x,y,n);break;
@@ -120,8 +122,8 @@ function drawItem(c,it,n){const x=it.x,y=it.y;
     case 2:setW(c); bridgeTile(c,x,y,true,n);break;
     case 3:setW(c); drawFence(c,it.qx,it.qy,n);break;
     case 4:setW(c); drawLampPost(c,it.lx,it.ly,n,it.z);break;
-    case 5:setW(c); drawPortal(c,n);break;
-    case 6:drawPeak(c,it.pk,n);break;}}
+    case 5:{const L=PORTAL_LOTE, dc={k:'portal-tunel',x:L.x,y:L.y,f:false}; if(decorSprite(dc.k,false))drawDecor(c,dc,n); else{setW(c); drawPortal(c,n);} break;}
+    case 6:drawDecor(c,it.dc,n);break;}}
 function bakeGroups(cx,cy,rs,night){const items=ckItems(cx,cy), m=new Map();
   for(const it of items){const key=it.d<-1e5?UNDER_D(cx,cy):Math.round(it.d*10)/10; let gr=m.get(key); if(!gr)m.set(key,gr={d:key,items:[]}); gr.items.push(it);}
   const out=[...m.values()].sort((a,b)=>a.d-b.d);

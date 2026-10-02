@@ -19,7 +19,8 @@ function imgSprite(slug,night){const e=IMG[slug]; if(!e)return null; const a=e.a
   const sx=2/k, sy=2/(k*vy); const base={cv:pick.img,ox:pick.ax+(a.dx||0)*sx,oy:pick.ay-(a.dy||0)*sy,sx,sy};
   if(night&&pick===e.d){if(!e.dn||e.dnSrc!==pick.img.src){const s=nightOf({cv:pick.img,ox:0,oy:0,sx:1,sy:1},null,null,0); e.dn=s.cv; e.dnSrc=pick.img.src;} return Object.assign({},base,{cv:e.dn});}
   return base;}
-function sprite(kind,key,v,night){const slug=kind==='o'?OB[key].slug:T[key].slug;
+function sprite(kind,key,v,night){let slug=kind==='o'?OB[key].slug:T[key].slug;
+  if(kind==='o'){const vs=[1,2,3].map(i=>slug+'-'+i).filter(s=>IMG[s]); if(vs.length)slug=vs[v%vs.length];}   // variações em imagem (pinheiro-1, -2…)
   const im=imgSprite(slug,night); if(im)return im;
   const id=kind+':'+key+':'+v+(night?':n':''); let s=SPR.get(id); if(s)return s;
   const dims=kind==='o'?{w:1,h:1}:T[key], art=kind==='o'?OB[key].art:T[key].art; if(!art)return null;
@@ -37,7 +38,7 @@ const IDB={db:null,open(){return this.db||(this.db=new Promise((res,rej)=>{try{c
   async put(k,v){const db=await this.open();return new Promise((res,rej)=>{const tx=db.transaction('img','readwrite');tx.objectStore('img').put(v,k);tx.oncomplete=res;tx.onerror=()=>rej(tx.error);});},
   async get(k){const db=await this.open();return new Promise((res,rej)=>{const tx=db.transaction('img');const q=tx.objectStore('img').get(k);q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error);});}};
 async function urlFor(u){if(!u)return null; if(u.startsWith('a:'))return '/_blob/'+u.slice(2); if(u.startsWith('idb:')){try{const b=await IDB.get(u.slice(4)); return b?URL.createObjectURL(b):null;}catch(e){return null;}} return u;}
-async function applyArt(slug){const m=ARTMAP[slug]; if(!m){delete IMG[slug]; refreshArt(); return;}
+async function applyArt(slug){const m=ARTMAP[slug]; if(!m){delete IMG[slug]; builtinFor(slug); refreshArt(); return;}
   const e={adj:m.adj||{}}; for(const side of ['d','n']){const r=m[side]; if(!r)continue; const src=await urlFor(r.u); if(!src)continue;
     const img=new Image(); img.onload=()=>{refreshArt();}; img.onerror=()=>{}; img.src=src; e[side]={img,ax:r.ax,ay:r.ay};}
   IMG[slug]=e; refreshArt();}

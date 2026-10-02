@@ -11,3 +11,6 @@ if(!out.includes(CDN))throw new Error('linha do PixiJS não encontrada em head.h
 fs.mkdirSync(d+'/app-www',{recursive:true});
 fs.writeFileSync(d+'/app-www/index.html',out.replace(CDN,'<script src="pixi.min.js"></script>'));
 console.log('app-www/index.html (PixiJS local)');
+// imagens prontas do mapa vão junto para o app
+fs.rmSync(d+'/app-www/img',{recursive:true,force:true}); fs.cpSync(d+'/img',d+'/app-www/img',{recursive:true});
+console.log('app-www/img', fs.readdirSync(d+'/img').length, 'imagens');

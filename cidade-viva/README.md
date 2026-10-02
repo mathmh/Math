@@ -25,6 +25,7 @@ O script junta `src/head.html` (HTML e CSS), todos os arquivos `src/js/*.js` em 
 | Desenho dos prédios antigos | `src/js/41-arte-predios.js` |
 | Desenho dos prédios novos | `src/js/42-arte-predios-novos.js` |
 | Imagens PNG no lugar dos desenhos (oficina) | `src/js/43-sprites-e-imagens.js` |
+| Imagens prontas do mapa (lista e uso) | `src/js/44-imagens-prontas.js`, `src/js/45-imagens-no-jogo.js` |
 | Desenho com WebGL (PixiJS) e Canvas de reserva, modo econômico | `src/js/51-backend-canvas-webgl.js` |
 | Chão, ruas, trilhos, pontes, relevo | `src/js/52-chao-ruas-relevo.js` |
 | Cache do mapa por pedaço (o que deixou o jogo leve) | `src/js/53-cache-por-pedaco.js` |
@@ -45,14 +46,25 @@ O script junta `src/head.html` (HTML e CSS), todos os arquivos `src/js/*.js` em 
 2. Em `42-arte-predios-novos.js`: `ART.meuDesenho=(c,t,a,v)=>{ ... }`.
 3. O `slug` é o nome do PNG na oficina de imagens (`nome-do-arquivo.png` e `nome-do-arquivo-noite.png`).
 
-## Relevo
+## Mapa e imagens prontas
 
-O mapa tem dois platôs com paredões de rocha: o **A** (nível 3), colado na cidade e com a boca do túnel, e o **B** (nível 6), atrás dele. No fundo fica a **serra**, uma faixa de pedra com picos nevados e neblina, que é só paisagem e não aceita construção. As ruas que sobem já vêm prontas e podem ser demolidas.
+O mapa tem 84×84 quadrados, com áreas de compra de 12×12, e a área inicial de 24×24 fica no meio. Ele é fixo, igual em todo jogo novo, e foi montado a partir da imagem de referência:
 
-- Formato dos platôs, serra e ruas prontas: `plateauShape`, `peakZone` e `presetRoads` em `30-mapa-terreno-save.js`.
-- Desenho do paredão de rocha (`rockFace`), da luz em degradê (`shadeMaps`) e dos picos (`drawPeak`): `52-chao-ruas-relevo.js`.
-- Neblina da serra: começo de `58-animacoes.js`.
-- Saves antigos ganham o relevo novo só nas áreas ainda não compradas (`refreshTerrain`, versão `TERR_VER`).
+- **Serra no fundo:** só paisagem, com picos, cordilheiras e neblina.
+- **Platôs:** dois de 16×16 (P1 no nível 6, P2 no nível 3), com paredões de rocha e ruas prontas subindo.
+- **Água:** rio com cachoeira e ponte, e lago com ilhota.
+- **Deserto:** no canto esquerdo, com o arco de pedra.
+- **Mar e praia:** com pedras na água.
+- **Túnel do trem:** a oeste da área inicial.
+
+Onde fica cada parte:
+
+- Layout: `30-mapa-terreno-save.js` (`P1`, `P2`, `RIVER`, `LAGO`, `ARCO`, `serraZone`, `DECOR`, `presetRoads`).
+- Imagens: `img/`, geradas por `imagens-mapa/preparar.py` a partir de `imagens-mapa/originais/`. O script recorta os sprite sheets, tira o fundo, escala e calcula a âncora. A lista vai para `src/js/44-imagens-prontas.js`.
+- Uso das imagens: `src/js/45-imagens-no-jogo.js`. São texturas de chão e água, paredão, peças de rua giradas, enfeites da serra, árvores com variações, decoração e carros.
+- Uma imagem enviada pela oficina com o mesmo nome tem prioridade sobre a pronta.
+
+Para trocar uma imagem: ponha o original em `imagens-mapa/originais/`, rode `python3 imagens-mapa/preparar.py` e depois `node build.js`.
 
 ## Desempenho
 
@@ -62,6 +74,6 @@ No celular, o modo econômico liga sozinho: resolução menor, 30 quadros por se
 
 ## Android (Capacitor) e PWA
 
-- A pasta `app-www/` é o jogo pronto para o app: o `node build.js` gera ali um `index.html` que usa o `pixi.min.js` da própria pasta, então funciona sem internet.
+- A pasta `app-www/` é o jogo pronto para o app: o `node build.js` gera ali um `index.html` que usa o `pixi.min.js` da própria pasta e copia as imagens para `app-www/img/`, então funciona sem internet.
 - Capacitor: `npm i @capacitor/core @capacitor/cli @capacitor/android`, `npx cap init "Cidade Viva" br.cidadeviva.app --web-dir=www`, copie o conteúdo de `app-www/` para `www/`, depois `npx cap add android` e `npx cap open android`.
 - O save fica no `localStorage`; fora do claude.ai não existe o salvamento na conta, então use Menu → Backup para guardar o arquivo.

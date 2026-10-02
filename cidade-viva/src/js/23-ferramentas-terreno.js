@@ -18,7 +18,7 @@ const TOOLS={
   muro:{g:'enfeite',name:'Muros e cercas',lv:2,cost:8,desc:'Cerca viva, muros e grades.',opt:'fence',q:1},
   apagar:{g:'enfeite',name:'Apagar',lv:1,cost:0,desc:'Tira calçadas e cercas.',q:1},
 };
-const TOOL_GROUPS={ruas:'Ruas e trilhos',terreno:'Terreno',enfeite:'Enfeitar'};
+const TOOL_GROUPS={ruas:'Ruas e trilhos',terreno:'Terreno',enfeite:'Decoração'};
 const BRIDGES=[{name:'Pedra em arcos',lv:2,c:150,mat:{stone:2}},{name:'Madeira',lv:2,c:100,mat:{wood:2}},{name:'Concreto',lv:8,c:200,mat:{stone:1,steel:1}},
   {name:'Metálica',lv:9,c:250,mat:{steel:2}},{name:'Pênsil',lv:14,c:400,mat:{steel:2,tools:1}}];
 const SOILS=[[0,'Grama','#86bf65'],[3,'Areia','#ead9a6'],[4,'Deserto','#e3b877'],[5,'Terra','#a07a52'],[6,'Neve','#f2f5f7'],[7,'Rocha','#8d9096']];

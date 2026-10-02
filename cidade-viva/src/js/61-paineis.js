@@ -108,7 +108,7 @@ function openQuests(soft){const act=activeQuests(); let h='';
 function openMenu(){const cyc=[['auto','Automático'],['day','Sempre dia'],['night','Sempre noite']];
   const h='<div class="help"><p><b>Casas</b> trazem moradores e pagam aluguel. Cada classe (baixa, média, alta) depende da felicidade: moradores querem <b>comércio, saúde, educação, diversão e fé</b> por perto. Quanto mais desejos atendidos, maior o aluguel.</p>'+
   '<p><b>Comércios</b> precisam de mercadorias, que vêm das plantações e do trem. <b>Serviços</b> abrem vagas de moradores e atendem desejos num raio. <b>Monumentos</b> pedem madeira e pedra, que saem dos obstáculos.</p>'+
-  '<p>Os botões redondos da direita abrem os pincéis: <b>Ruas</b> (rua, ponte, trilho), <b>Terreno</b> (elevar, rampa, água, tipo de chão) e <b>Enfeitar</b> (calçadas e muros). Arraste para pintar; dois dedos ou o botão direito do mouse movem o mapa.</p>'+
+  '<p>Os botões redondos da direita abrem os pincéis: <b>Ruas</b> (rua, ponte, trilho), <b>Terreno</b> (elevar, rampa, água, tipo de chão) e <b>Decoração</b> (calçadas e muros). Arraste para pintar; dois dedos ou o botão direito do mouse movem o mapa.</p>'+
   '<p><b>Indústria</b> transforma madeira, pedra, aço e borracha em ferramentas, pneus e carros, que vendem em lojas e são pedidos em prédios grandes. O <b>trem</b> só funciona com trilho até o túnel, a oeste.</p>'+
   '<p>Toque em árvores, pedras e arbustos para limpar. Na hora de construir, <b>Girar</b> (ou a tecla R) vira o prédio, <b>Em linha</b> constrói vários enfeites seguidos e <b>Copiar</b> (no painel do prédio) repete o mesmo prédio. Nos pincéis, <b>Desfazer</b> volta a última pincelada.</p>'+
   '<p><b>Cidade</b> traz pedidos dos moradores, leis, pesquisa do Campus e gráficos. <b>Poluição</b> vem da indústria, do trânsito e do porto; parques, árvores, leis e educação limpam. Fora da área dos bombeiros podem acontecer incêndios leves.</p></div>'+
@@ -223,7 +223,7 @@ $('#bMenu').onclick=()=>{if(sheetKind==='menu')closeSheet(); else openMenu();};
 $('#hLvl').onclick=()=>{toast('Nível '+S.lv+' · faltam '+fmtN(cumXp(S.lv+1)-S.xp)+' XP para o próximo');};
 
 function resize(){const r=$('#app').getBoundingClientRect(); VW=r.width; VH=r.height; DPR=Math.min(QUAL.dprCap,window.devicePixelRatio||1); cv.width=Math.round(VW*DPR); cv.height=Math.round(VH*DPR); BK.resize();}
-function centerStart(){const [x,y]=P(24,21); cam.x=x; cam.y=y; cam.z=clamp(Math.min(VW/520,VH/440),.6,1.5); clampCam();}
+function centerStart(){const [x,y]=P(44,41); cam.x=x; cam.y=y; cam.z=clamp(Math.min(VW/520,VH/440),.6,1.5); clampCam();}
 function afterLoad(){derive(); refreshQuests(); closeSheet(); setMode({t:'idle'}); centerStart(); updateHud();}
 setInterval(()=>{if(!S)return; systemsTick(Date.now()); derive(); updateHud(); updateWx();
   if(sheetKind==='info'&&sheetData){const b=byId(sheetData.id); if(!b)closeSheet(); else if(infoKey(b)!==sheetKey)openInfo(b); else liveTimers();}

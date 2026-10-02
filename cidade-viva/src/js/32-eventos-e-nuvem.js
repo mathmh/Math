@@ -10,7 +10,11 @@ function markDirty(){dirtySave=true;}
 function saveNow(){if(!S)return; S.t=Date.now(); const json=serialize(); try{localStorage.setItem(SAVE_KEY,json);}catch(e){} dirtySave=false; pushDb(json);}
 function pushDb(json){if(!dbRef)return; if(dbWriting){dbPending=true;return;} dbWriting=true;
   dbRef.set({save:json,t:S.t}).catch(()=>{}).finally(()=>{dbWriting=false; if(dbPending){dbPending=false; pushDb(serialize());}});}
-function loadLocal(){try{const j=localStorage.getItem(SAVE_KEY); if(j){const s=JSON.parse(j); if(s&&(s.v>=2&&s.v<=4))return s;}}catch(e){} return null;}
+// saves do mapa antigo (v2 a v4) ficam guardados numa chave à parte e o jogo começa no mapa novo
+const OLD_MAP_KEY='cidadeviva_save_mapa64';
+let oldMapSaved=false;
+function loadLocal(){try{const j=localStorage.getItem(SAVE_KEY); if(j){const s=JSON.parse(j); if(s&&s.v===SAVE_VER)return s;
+    if(s&&s.v>=2&&s.v<=4){try{if(!localStorage.getItem(OLD_MAP_KEY))localStorage.setItem(OLD_MAP_KEY,j);}catch(e){} oldMapSaved=true;}}}catch(e){} return null;}
 function loadOld(){try{const j=localStorage.getItem(OLD_KEY); if(j){const s=JSON.parse(j); if(s&&s.v===1)return s;}}catch(e){} return null;}
 let migratedMsg=null, upgradedV2=false, upgradedV3=false;
 function bootState(){const s=loadLocal(); if(s){const was=s.v; if(hydrate(s)){if(was===2)upgradedV2=true; return;}}
@@ -21,7 +25,8 @@ async function initCloud(){
     const [db,user]=await Promise.all([window.claude.use('db'),window.claude.use('user')]); if(!db||!user)return;
     const id=await user.id(); if(!id)return; const ref=db.doc('data/users/'+id+'/save'); const snap=await ref.get(); dbRef=ref; saveWhere='sua conta';
     if(snap.exists){const d=snap.data(); try{const s=JSON.parse(d.save);
-      if(s&&(s.v>=2&&s.v<=4)&&(s.t||0)>(S.t||0)+3000){const was=s.v; if(hydrate(s)){afterLoad(); if(was<4)showUpgrade(); else toast('Progresso carregado da sua conta');}}
+      if(s&&s.v===SAVE_VER&&(s.t||0)>(S.t||0)+3000){if(hydrate(s)){afterLoad(); toast('Progresso carregado da sua conta');}}
+      else if(s&&s.v>=2&&s.v<=4){try{await db.doc('data/users/'+id+'/save-mapa64').set({save:d.save,t:Date.now()});}catch(e){}}
       else if(s&&s.v===1&&!migratedMsg&&(S.st.expand===0&&S.lv<=1)){const m=migrateV1(s); S=m.s; migratedMsg=m.refund; afterLoad(); showMigrated();}}catch(e){}}
     saveNow(); initArtCloud(db);
   }catch(e){dbRef=null;}}

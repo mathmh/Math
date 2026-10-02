@@ -33,7 +33,7 @@ function perfText(){if(!PERF.t.length)return ''; const a=PERF.t.slice().sort((x,
 /* ---- estado por quadro para camadas repetidas (mar e chuva) ---- */
 const FR={seaX:0,seaY:0,rain:0,rainT:0,seaCk:[]};
 // mar fora do mapa (a leste) — dentro do mapa o mar só é pintado nos pedaços que têm água
-const SEA_OUT=[[64,-60,64,64*2+120],[48,-60,16,60],[48,64,16,60]];
+const SEA_OUT=[[N,-60,64,N*2+120],[N-12,-60,12,60],[N-12,N,12,60]];
 let RAINPAT=null, RAINCV=null;
 function rainTex(){if(RAINCV)return RAINCV; const s=128, c2=document.createElement('canvas'); c2.width=c2.height=s; const c=c2.getContext('2d'); const r=rng(31);
   c.strokeStyle='rgba(210,225,245,.55)'; c.lineCap='round';
@@ -45,7 +45,7 @@ function rainTex(){if(RAINCV)return RAINCV; const s=128, c2=document.createEleme
 const BK2D={name:'Canvas',
   draw(){const c=g; c.setTransform(1,0,0,1,0,0); c.globalAlpha=1; c.globalCompositeOperation='source-over';
     c.fillStyle='#3d6a34'; c.fillRect(0,0,cv.width,cv.height);
-    setIso(c); patT(PAT.sea,32,FR.seaX,FR.seaY); c.fillStyle=PAT.sea; c.beginPath(); for(const [x,y,w,h] of SEA_OUT)c.rect(x,y,w,h); for(const e of FR.seaCk)c.rect(e.cx*CH,e.cy*CH,CH,CH); c.fill();
+    setIso(c); patT(PAT.sea,seaK(),FR.seaX,FR.seaY); c.fillStyle=PAT.sea; c.beginPath(); for(const [x,y,w,h] of SEA_OUT)c.rect(x,y,w,h); for(const e of FR.seaCk)c.rect(e.cx*CH,e.cy*CH,CH,CH); c.fill();
     const K=TGT.k,TX=TGT.tx,TY=TGT.ty; let add=false, al=1, id=false; c.setTransform(1,0,0,1,0,0); id=true;
     for(let i=0;i<DL.n;i++){const p=DL.a[i];
       if(p.add!==add){c.globalCompositeOperation=p.add?'lighter':'source-over'; add=p.add;}
@@ -72,7 +72,7 @@ const BKGL={name:'WebGL',ok:false,R:null,root:null,world:null,iso:null,pool:null
       this.root=new PIXI.Container(); this.world=new PIXI.Container(); this.iso=new PIXI.Container(); this.pool=new PIXI.Container(); this.scr=new PIXI.Container();
       this.root.addChild(this.world,this.scr); this.world.addChild(this.iso,this.pool);
       this.iso.transform.setFromMatrix(new PIXI.Matrix(32,16,-32,16,0,0));
-      const seaT=this.texOf(PAT_SRC.sea); this.seaT=seaT; this.seaOut=SEA_OUT.map(([x,y,w,h])=>{const t=new PIXI.TilingSprite(seaT,w,h); t.position.set(x,y); t.tileScale.set(1/32); this.iso.addChild(t); return t;}); this.seaCk=[];
+      const seaT=this.texOf(PAT_SRC.sea); this.seaT=seaT; this.seaOut=SEA_OUT.map(([x,y,w,h])=>{const t=new PIXI.TilingSprite(seaT,w,h); t.position.set(x,y); t.tileScale.set(1/seaK()); this.iso.addChild(t); return t;}); this.seaCk=[]; this.seaSrc=PAT_SRC.sea;
       const rt=this.texOf(rainTex()); this.rainA=new PIXI.TilingSprite(rt,100,100); this.rainB=new PIXI.TilingSprite(rt,100,100); this.rainB.tileScale.set(1.6); this.scr.addChild(this.rainA,this.rainB);
       this.M=new PIXI.Matrix(); this.ok=true; this.resize(); return true;}
     catch(e){console.warn('PixiJS indisponível',e); if(this.el)this.el.remove(); this.ok=false; return false;}},
@@ -84,8 +84,9 @@ const BKGL={name:'WebGL',ok:false,R:null,root:null,world:null,iso:null,pool:null
   resize(){if(!this.ok)return; this.R.resolution=DPR; this.R.resize(Math.max(1,VW),Math.max(1,VH)); this.el.style.width=VW+'px'; this.el.style.height=VH+'px';
     this.rainA.width=this.rainB.width=VW; this.rainA.height=this.rainB.height=VH;},
   draw(){const z=cam.z; this.world.position.set(VW/2-cam.x*z,VH/2-cam.y*z); this.world.scale.set(z);
+    if(this.seaSrc!==PAT_SRC.sea){const t=this.texOf(PAT_SRC.sea); if(t){this.seaT=t; this.seaSrc=PAT_SRC.sea; for(const s of [...this.seaOut,...this.seaCk]){s.texture=t; s.tileScale.set(1/seaK());}}}
     for(const t of this.seaOut)t.tilePosition.set(FR.seaX,FR.seaY);
-    let si=0; for(const e of FR.seaCk){let t=this.seaCk[si]; if(!t){t=new PIXI.TilingSprite(this.seaT,CH,CH); t.tileScale.set(1/32); this.iso.addChild(t); this.seaCk.push(t);} si++; t.visible=true; t.position.set(e.cx*CH,e.cy*CH); t.tilePosition.set(FR.seaX,FR.seaY);}
+    let si=0; for(const e of FR.seaCk){let t=this.seaCk[si]; if(!t){t=new PIXI.TilingSprite(this.seaT,CH,CH); t.tileScale.set(1/seaK()); this.iso.addChild(t); this.seaCk.push(t);} si++; t.visible=true; t.position.set(e.cx*CH,e.cy*CH); t.tilePosition.set(FR.seaX,FR.seaY);}
     for(let i=si;i<this.seaCk.length;i++)this.seaCk[i].visible=false;
     const pool=this.pool.children, W=PIXI.Texture.WHITE, ADD=PIXI.BLEND_MODES.ADD, NOR=PIXI.BLEND_MODES.NORMAL; let used=0;
     for(let i=0;i<DL.n;i++){const p=DL.a[i]; let tex;

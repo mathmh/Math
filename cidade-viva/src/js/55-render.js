@@ -102,7 +102,7 @@ function drawMarks(c){
 const VIEWS=[['happy','Felicidade'],['poll','Poluição'],['com','Comércio'],['sau','Saúde'],['edu','Educação'],['fun','Diversão'],['fe','Fé'],['fire','Bombeiros'],['tour','Turismo'],['set','Bairros']];
 let VIEWC=null, viewKey='';
 function viewImg(){const key=VIEW+'|'+D.ver; if(VIEWC&&viewKey===key)return VIEWC; if(VIEWC)BK.free(VIEWC);
-  const c2=document.createElement('canvas'); c2.width=c2.height=256; const c=c2.getContext('2d'); c.scale(4,4); const now=Date.now(); const k=VIEW;
+  const c2=document.createElement("canvas"); c2.width=c2.height=N*4; const c=c2.getContext("2d"); c.scale(4,4); const now=Date.now(); const k=VIEW;
   const rect=(b,i)=>c.fillRect(b.x+i,b.y+i,fw(b)-2*i,fh(b)-2*i);
   if(NEED_I[k]!=null){const col=NEEDS[NEED_I[k]][2]; c.fillStyle=col; c.globalAlpha=.2;
     for(const b of S.b){if(now<b.d)continue; const t=T[b.k]; let r=t.serve&&t.serve[k]; if(!r&&k==='com'&&t.cat==='biz')r=5; if(!r)continue; c.fillRect(b.x-r,b.y-r,fw(b)+2*r,fh(b)+2*r);}

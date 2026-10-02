@@ -56,6 +56,7 @@ function initPats(){
   PAVE[5]=mkPat((c,s)=>{const cols=['#e8e1d0','#2f7f8f','#c8553d','#e8e1d0'];for(let i=0;i<4;i++)for(let j=0;j<4;j++){c.fillStyle=cols[(i+j)%4];c.fillRect(i*16,j*16,16,16);c.fillStyle='#f6f0e2';c.beginPath();c.arc(i*16+8,j*16+8,4,0,7);c.fill();}},64);
   PAVE[6]=mkPat((c,s)=>speck(c,s,23,120,'rgba(90,60,30,.4)','rgba(220,190,150,.4)','#b38a5e'),64);
   PAVE[7]=mkPat((c,s)=>{c.fillStyle='#86bf65';c.fillRect(0,0,s,s);c.fillStyle='#d8d2c4';for(const [x,y] of [[10,10],[42,14],[22,40],[50,46]]){c.beginPath();c.ellipse(x,y,9,6,0,0,7);c.fill();}},64);}
-function patT(p,scale,ox,oy){p.setTransform(new DOMMatrix([1/scale,0,0,1/scale,ox||0,oy||0]));}
+const seaK=()=>PAT.sea&&PAT.sea._k||32;
+function patT(p,scale,ox,oy){if(p._k)scale=p._k;p.setTransform(new DOMMatrix([1/scale,0,0,1/scale,ox||0,oy||0]));}
 const SOIL_PAT=t=>t===7?PAT.rock:t===3?PAT.sand:t===4?PAT.desert:t===5?PAT.dirt:t===6?PAT.snow:PAT.grass;
 

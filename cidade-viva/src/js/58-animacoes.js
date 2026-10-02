@@ -1,11 +1,16 @@
 /* ================= Extras animados: roda-gigante, eólicas, zoológico, aviões, iate, farol, fogo e fumaça =================
  Tudo vira sprite pronto (por quadro de animação) e entra na lista de desenho ordenada. */
 function extraItems(items,now,n,vis){const nn=n>.5?1:0;
-  // neblina passando pela serra
-  const fogC=n>.5?'120,135,165':'236,241,246';
-  for(const pk of peaks()){const r=pk.k%97/97; if(r<.35)continue; const [X,Y]=P(pk.x+.5,pk.y+.5,LV_P*HZ), t=now/1000;
-    for(let q=0;q<2;q++){const w=pk.w*(1.1+q*.4), h=w*.32, dx=Math.sin(t*.05+r*9+q*2)*pk.w*.35, cy=Y-pk.h*(.18+q*.22);
-      items.push({d:pk.x+pk.y+1.6+q*.01,t:9,f:()=>pImg(glowImg(fogC),X+dx-w/2,cy-h/2,w,h,(.32+.12*Math.sin(t*.07+q+r*5))*(1-.4*n))});}}
+  // neblina passando pela serra (imagens neblina-1/2; se não carregaram, mancha suave)
+  const t=now/1000, pk=peaks();
+  for(let i=0;i<pk.length;i++){if(i%2)continue; const p=pk[i], l=decorLote(p), [X,Y]=P(p.x+l.w/2,p.y+l.h/2,0), r=(i*37%97)/97;
+    const im=IMGP[i%4?'neblina-1':'neblina-2'], w=(l.w+l.h)*30*(1+r*.5), h=w*.42, dx=Math.sin(t*.04+r*9)*w*.3, cy=Y-(l.w+l.h)*14*(.7+r*.5);
+    const al=(.55+.2*Math.sin(t*.06+r*5))*(1-.5*n);
+    items.push({d:decorD(p)+.4,t:9,f:()=>{if(im)pImg(im,X+dx-w/2,cy-h/2,w,h,al); else pImg(glowImg(n>.5?'120,135,165':'236,241,246'),X+dx-w/2,cy-h/2,w,h,al*.6);}});}
+  // cachoeira da nascente do rio
+  {const [X,Y]=P(RIVER[0][0]+.5,RIVER[0][1]+.3,0), H=46;
+    items.push({d:RIVER[0][0]+RIVER[0][1]+.2,t:9,f:()=>{for(let k=0;k<5;k++){const ph=((t*1.6+k*.37)%1); pImg(glowImg('235,248,255'),X-7+k*3.2,Y-H+ph*H*.85,4,10,(1-ph)*.75*(1-.4*n));}
+      pImg(glowImg('255,255,255'),X-14,Y-8,28,12,.55*(1-.4*n));}});}
   for(const b of S.b){const t=T[b.k]; if(!vis(b,fw(b),fh(b)))continue; const done=now>=b.d;
     const base=b.x+b.y+(fw(b)+fh(b))/2+.001, zb=G.ht[b.y*N+b.x]*HZ;
     if(done&&t.anim==='ferris'){const [hx,hy]=P(b.x+fw(b)/2,b.y+fh(b)/2,zb+2+ferrisR()+8); const st=Math.floor(now/120)%24;

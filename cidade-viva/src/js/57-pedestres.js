@@ -4,7 +4,7 @@
  O movimento é sempre contínuo de um ponto ao outro; aparecem e somem com um esmaecer suave. */
 let peds=[], pedGraph=null, pedGraphVer=-1;
 const pedCross=new Set();
-const PO=.085, PCORN=[[PO,PO],[1-PO,PO],[1-PO,1-PO],[PO,1-PO]], PSIDE=[[1,2],[2,3],[0,3],[0,1]];
+const PO=.11, PCORN=[[PO,PO],[1-PO,PO],[1-PO,1-PO],[PO,1-PO]], PSIDE=[[1,2],[2,3],[0,3],[0,1]];
 function pedNodePos(id){if(id<4*N*N){const t=id>>2,k=id&3; return [(t%N)+PCORN[k][0],((t/N)|0)+PCORN[k][1]];} const q=id-4*N*N; return [((q%Q2)+.5)/2,(((q/Q2)|0)+.5)/2];}
 function buildPedGraph(){const adj=new Map(), add=(a,b,cr)=>{let l=adj.get(a); if(!l)adj.set(a,l=[]); if(!l.some(e=>e.to===b))l.push({to:b,cr}); let m=adj.get(b); if(!m)adj.set(b,m=[]); if(!m.some(e=>e.to===a))m.push({to:a,cr});};
   for(let y=0;y<N;y++)for(let x=0;x<N;x++){if(!isCarRd(x,y))continue; const t=y*N+x, base=t*4, nb=[carLink(x,y,0),carLink(x,y,1),carLink(x,y,2),carLink(x,y,3)], n=nb[0]+nb[1]+nb[2]+nb[3];
