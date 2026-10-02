@@ -120,7 +120,17 @@ function cliffFace(c,pts,top,bot){const ys=pts.map(p=>p[1]), y0=Math.min(...ys),
 // paredão de rocha: blocos irregulares em fileiras (as fileiras emendam entre quadrados), rachaduras,
 // sombra no pé e a borda de grama pendurada no alto. e0/e1 = cantos da borda no chão; zt/zb = alturas de cima e de baixo.
 const shq=(col,f)=>sh(col,Math.round(f*50)/50);
+// paredão em peças de imagem (penhasco-1..5): uma peça por borda de quadrado, empilhadas quando o paredão é alto;
+// a face da direita usa a peça espelhada e mais escura. Volta false se não dá para usar (imagens não carregaram, borda inclinada).
+const PENH_FX=.08, PENH_FY=.66, PENH_FACE=.56;
+function cliffPieces(c,e0,zb,H,lit){if(H<8)return false; const pcs=[1,2,3,5,4].map(k=>IMGP['penhasco-'+k]).filter(Boolean); if(pcs.length<4)return false;
+  const n=Math.max(1,Math.round(H/36)), Hs=H/n, seed=hsh(Math.round(e0[0]*2),Math.round(e0[1]*2),lit?7:13);
+  setW(c); c.save(); if(!lit)c.filter='brightness(0.74)';
+  for(let k=0;k<n;k++){const r=(seed>>>(k*3))%23, im=r===0&&pcs[4]?pcs[4]:pcs[r%4], W=im.naturalWidth/2, Hn=im.naturalHeight/2, v=Hs/(Hn*PENH_FACE);
+    const [X,Y]=P(e0[0],e0[1],zb+k*Hs); c.save(); c.translate(X,Y); if(!lit)c.scale(-1,1); c.scale(1,v); c.drawImage(im,-W*PENH_FX,-Hn*PENH_FY,W,Hn); c.restore();}
+  c.restore(); return true;}
 function rockFace(c,e0,e1,zt0,zt1,zb0,zb1,lit,grass,n){const A=P(e0[0],e0[1],0), B=P(e1[0],e1[1],0);
+  if(zt0===zt1&&zb0===zb1&&cliffPieces(c,e0,zb0,zt0-zb0,lit))return;
   const pt=(u,z)=>[A[0]+(B[0]-A[0])*u, A[1]+(B[1]-A[1])*u-z], zt=u=>zt0+(zt1-zt0)*u, zb=u=>zb0+(zb1-zb0)*u;
   const face=[pt(0,zt0),pt(1,zt1),pt(1,zb1),pt(0,zb0)], H=Math.max(zt0-zb0,zt1-zb1), base=lit?'#aaa498':'#7c776e';
   cliffFace(c,face,nc(shq(base,1.04),n),nc(shq(base,.74),n)); if(H<6)return;
@@ -157,15 +167,16 @@ function rockFace(c,e0,e1,zt0,zt1,zb0,zb1,lit,grass,n){const A=P(e0[0],e0[1],0),
 function drawColumn(c,x,y,n){const i=y*N+x, cz=cornerZ(x,y), tr=G.tr[i];
   const nbz=(X,Y)=>inMap(X,Y)?((G.tr[Y*N+X]===1||G.tr[Y*N+X]===2)?[0,0,0,0]:cornerZ(X,Y)):[-20,-20,-20,-20];
   const grass=tr===0||tr===5;
-  setW(c); const r=nbz(x+1,y); // face direita (na sombra)
-  if(cz[1]>r[0]||cz[2]>r[3])rockFace(c,[x+1,y],[x+1,y+1],cz[1],cz[2],Math.min(r[0],cz[1]),Math.min(r[3],cz[2]),false,grass,n);
-  const l=nbz(x,y+1); // face esquerda (no sol)
-  if(cz[3]>l[0]||cz[2]>l[1])rockFace(c,[x,y+1],[x+1,y+1],cz[3],cz[2],Math.min(l[0],cz[3]),Math.min(l[1],cz[2]),true,grass,n);
   const pl=tilePlanes(x,y), pat=isUl(x,y)?SOIL_PAT(tr):lockPat(tr), low=tileIsLow(x,y,cz);
   for(const q of pl){setIsoPlane(c,x,y,q.zc,q.A,q.B); c.save(); c.beginPath();
     if(q.tri){const t=q.tri, mx=(t[0][0]+t[1][0]+t[2][0])/3, my=(t[0][1]+t[1][1]+t[2][1])/3;
       t.forEach((v,k)=>{const px=x+mx+(v[0]-mx)*1.05, py=y+my+(v[1]-my)*1.05; k?c.lineTo(px,py):c.moveTo(px,py);}); c.closePath();}
     else c.rect(x-.02,y-.02,1.04,1.04);
     c.clip(); patT(pat,32); c.fillStyle=pat; c.fillRect(x-1,y-1,3,3); shadeRect(c,x-1,y-1,4,4,low); c.restore();}
+  setW(c);
+  setW(c); const r=nbz(x+1,y); // face direita (na sombra)
+  if(cz[1]>r[0]||cz[2]>r[3])rockFace(c,[x+1,y],[x+1,y+1],cz[1],cz[2],Math.min(r[0],cz[1]),Math.min(r[3],cz[2]),false,grass,n);
+  const l=nbz(x,y+1); // face esquerda (no sol)
+  if(cz[3]>l[0]||cz[2]>l[1])rockFace(c,[x,y+1],[x+1,y+1],cz[3],cz[2],Math.min(l[0],cz[3]),Math.min(l[1],cz[2]),true,grass,n);
   setIsoTile(c,x,y); tileTop(c,x,y);
   setW(c);}

@@ -12,7 +12,8 @@ os.makedirs(OUT, exist_ok=True)
 META = {}
 
 def abrir(nome):
-    return Image.open(os.path.join(ORIG, nome + '.webp'))
+    f = os.path.join(ORIG, nome + '.webp')
+    return Image.open(f if os.path.exists(f) else os.path.join(ORIG, nome + '.png'))
 
 def salvar(im, slug, **meta):
     im.save(os.path.join(OUT, slug + '.webp'), 'WEBP', quality=88, method=6)
@@ -168,6 +169,11 @@ nomes = [('banco-de-praca', 20, 1, 1), ('hidrante', 9, 1, 1), ('poste-de-luz', 1
          ('vaso-de-plantas', 18, 1, 1), ('placa-de-direcao', 16, 1, 1), ('cerca-viva', 50, 1, 1), ('relogio-de-praca', 12, 1, 1)]
 for (slug, larg, w, h), cel in zip(nomes, grade(folha, 4, 4)):
     im = escalar(maior_bloco(cel), larg); salvar(im, slug, **objeto(im, w, h, lift=.03))
+
+# ---- penhascos (3×2): peças de paredão, 1 quadrado de largura (o jogo encaixa, estica e espelha)
+folha = sem_fundo(abrir('sprites-penhascos'), MAG)
+for n, cel in enumerate(grade(folha, 3, 2)):
+    im = escalar(maior_bloco(cel), 44); salvar(im, 'penhasco-' + str(n + 1), penhasco=1)
 
 # ---- carros (5×2): em cima a frente, embaixo a traseira ----
 folha = sem_fundo(abrir('sprites-carros'), MAG)
