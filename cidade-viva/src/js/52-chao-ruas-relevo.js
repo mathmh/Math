@@ -109,11 +109,11 @@ function shadeRect(c,sx,sy,w,h,low){const m=shadeMaps(), M=N+1, x0=Math.max(0,sx
   c.globalCompositeOperation='source-over';}
 function tileIsLow(x,y,cz){const m=shadeMaps(), M=N+1; return cz[0]<m.zt[y*M+x]||cz[1]<m.zt[y*M+x+1]||cz[2]<m.zt[(y+1)*M+x+1]||cz[3]<m.zt[(y+1)*M+x];}
 // solo já com a textura de "área não comprada" por cima (uma pintura só, sem emenda entre quadrados)
-const LPAT={};
+const LPAT={}, LOCK_TINT='rgba(28,34,22,.24)';   // área não comprada: um pouco mais escura, sem mudar a cor do chão
 function lockPat(tr){if(LPAT[tr])return LPAT[tr]; const p=SOIL_PAT(tr), k=p._k||32, S=p._src?p._src.width:64;
   const cv=document.createElement('canvas'); cv.width=cv.height=S; const c=cv.getContext('2d');
   p.setTransform(new DOMMatrix()); c.fillStyle=p; c.fillRect(0,0,S,S);
-  PAT.lock.setTransform(new DOMMatrix([k/32,0,0,k/32,0,0])); c.globalAlpha=p._k?.38:.55; c.fillStyle=PAT.lock; c.fillRect(0,0,S,S);
+  c.fillStyle=LOCK_TINT; c.fillRect(0,0,S,S);
   const out=g.createPattern(cv,'repeat'); if(p._k)out._k=p._k; return LPAT[tr]=out;}
 function cliffFace(c,pts,top,bot){const ys=pts.map(p=>p[1]), y0=Math.min(...ys), y1=Math.max(...ys);
   const gr=c.createLinearGradient(0,y0,0,y1); gr.addColorStop(0,top); gr.addColorStop(1,bot); poly(c,pts,gr);}

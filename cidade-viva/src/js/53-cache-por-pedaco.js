@@ -77,7 +77,7 @@ function drawBase(c,cx,cy){const x0=cx*CH,y0=cy*CH; setIso(c); const e=.03;
       for(let k=0;k<4;k++){const [sx,sy]=CORN[k], B=soilAt(x+sx,y), C=soilAt(x,y+sy); if(B<0||B!==C||B===A||B===1||B===2)continue;
         let p=cp.get(B); if(!p)cp.set(B,p=new Path2D()); cornerPiece(p,x,y,k);}}
     for(const [B,p] of cp){const pt=SOIL_PAT(B); patT(pt,32); c.fillStyle=pt; c.fill(p);}
-    if(!S.ul[cy*NC+cx]){patT(PAT.lock,32); c.globalAlpha=PAT.grass._k?.38:.55; c.fillStyle=PAT.lock; c.fillRect(x0-e,y0-e,CH+2*e,CH+2*e); c.globalAlpha=1;}
+    if(!S.ul[cy*NC+cx]){c.fillStyle=LOCK_TINT; c.fillRect(x0-e,y0-e,CH+2*e,CH+2*e);}
     c.save(); c.beginPath(); c.rect(x0-e,y0-e,CH+2*e,CH+2*e); c.clip(); shadeRect(c,x0-1,y0-1,CH+3,CH+3,true); c.restore(); setIso(c);
     // água: barranco marrom = o contorno engrossado; depois recorta a água (as linhas internas somem junto)
     const W=waterPath(x0,y0);
@@ -94,8 +94,7 @@ function drawDetail(c,cx,cy){const x0=cx*CH,y0=cy*CH, owned=!!S.ul[cy*NC+cx]; se
     const br=[]; for(let y=y0;y<y0+CH;y++)for(let x=x0;x<x0+CH;x++)if(G.rd[y*N+x]===2)br.push([x,y]); br.sort((a,b)=>a[0]+a[1]-b[0]-b[1]);
     for(const [x,y] of br)bridgeTile(c,x,y,false);
     setIso(c); if(!owned){c.strokeStyle='rgba(255,255,255,.22)'; c.lineWidth=1.2/(TGT.k*32); c.strokeRect(x0,y0,CH,CH);}
-    setW(c); if(cy===NC-1){const xa=x0,xb=Math.min(x0+CH,Math.floor(coastX(N-1))-3); if(xb>xa)poly(c,[P(xa,N),P(xb,N),P(xb,N,-20),P(xa,N,-20)],'#7a5a3a');}
-    if(cx===0)poly(c,[P(0,y0),P(0,y0+CH),P(0,y0+CH,-20),P(0,y0,-20)],'#5f4429');}
+    setW(c);}
 function qHasPv(x,y){const a=(y*2)*Q2+x*2,b=a+Q2; return G.pv[a]||G.pv[a+1]||G.pv[b]||G.pv[b+1];}
 // espuma: anel fino em volta da água, seguindo o contorno redondo
 function bakeFoam(cx,cy,rs){const x0=cx*CH,y0=cy*CH, bb=chunkBox(cx,cy); let any=false;

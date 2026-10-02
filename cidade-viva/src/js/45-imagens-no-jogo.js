@@ -20,15 +20,25 @@ function loadBuiltinImages(){for(const slug in IMG_PRONTAS){const m=IMG_PRONTAS[
     im.onerror=()=>{};
     im.src=m.src;
     if(!m.textura&&!m.calcada&&!ARTMAP[slug])builtinFor(slug);}}
-// enfeite fixo do mapa (serra, arco, pedras no mar, portal): desenhado na âncora = canto de cima do lote
-function decorSprite(slug,night){return imgSprite(slug,night);}
-function decorBox(d){const s=decorSprite(d.k,false); const [X,Y]=P(d.x,d.y,0);
-  if(!s){const m=IMG_PRONTAS[d.k]; return m?[X-m.w/2-4,Y-m.h/2,X+m.w/2+4,Y+m.h/2]:[X-40,Y-80,X+40,Y+20];}
+// enfeite fixo do mapa (serra, arco, pedras no mar, portal): desenhado na âncora = canto de cima do lote,
+// em cima do chão onde ele fica (as montanhas em volta dos platôs ficam no alto), com escala d.s
+function decorSprite(slug,night,sc){const s=imgSprite(slug,night); if(!s||!sc||sc===1)return s; return Object.assign({},s,{sx:s.sx/sc,sy:s.sy/sc});}
+function decorZ(d){const l=decorLote(d); const x=clamp(Math.floor(d.x+l.w/2),0,N-1), y=clamp(Math.floor(d.y+l.h/2),0,N-1); return G.ht&&G.ht.length?G.ht[y*N+x]*HZ:0;}
+function decorBox(d){const s=decorSprite(d.k,false,d.s); const [X,Y]=P(d.x,d.y,decorZ(d));
+  if(!s){const m=IMG_PRONTAS[d.k], k=d.s||1; return m?[X-m.w*k/2-4,Y-m.h*k/2,X+m.w*k/2+4,Y+m.h*k/2]:[X-40,Y-80,X+40,Y+20];}
   const w=s.cv.width/s.sx, h=s.cv.height/s.sy, ox=s.ox/s.sx, oy=s.oy/s.sy;
   return d.f?[X-(w-ox)-2,Y-oy-2,X+ox+2,Y-oy+h+2]:[X-ox-2,Y-oy-2,X-ox+w+2,Y-oy+h+2];}
-function drawDecor(c,d,n){const s=decorSprite(d.k,n>.5); if(!s)return; setW(c); const [X,Y]=P(d.x,d.y,0); drawSprite(c,s,X,Y,d.f);}
-const decorLote=d=>{const m=IMG_PRONTAS[d.k]; const w=m?m.lw||1:1, h=m?m.lh||1:1; return d.f?{w:h,h:w}:{w,h};};
+function drawDecor(c,d,n){const s=decorSprite(d.k,n>.5,d.s); if(!s)return; setW(c); const [X,Y]=P(d.x,d.y,decorZ(d)); drawSprite(c,s,X,Y,d.f);}
+const decorLote=d=>{const m=IMG_PRONTAS[d.k], k=d.s||1; const w=(m?m.lw||1:1)*k, h=(m?m.lh||1:1)*k; return d.f?{w:h,h:w}:{w,h};};
 const decorD=d=>{const l=decorLote(d); return d.x+d.y+(l.w+l.h)/2;};
+// borda do mapa (barranco de terra nas bordas esquerda e da frente): uma faixa só, sem emendas entre pedaços
+let SKIRT=null;
+function skirtImg(col){const c2=document.createElement('canvas'); c2.width=c2.height=4; const c=c2.getContext('2d'); const gr=c.createLinearGradient(0,0,0,4); gr.addColorStop(0,col); gr.addColorStop(1,'#3d2a18'); c.fillStyle=gr; c.fillRect(0,0,4,4); return c2;}
+function pushSkirt(){if(!SKIRT)SKIRT={l:skirtImg('#6b4c2e'),b:skirtImg('#7a5a3a')}; const D=22, xc=Math.floor(coastX(N-1))-2;
+  // borda esquerda (x=0): de P(0,0) até P(0,N), descendo D px
+  pMat(SKIRT.l,[-N*32/4,N*16/4,0,D/4,0,0],1);
+  // borda da frente (y=N): de P(0,N) até P(xc,N)
+  const [ax,ay]=P(0,N); pMat(SKIRT.b,[xc*32/4,xc*16/4,0,D/4,ax,ay],1);}
 // ruas em imagem: 5 peças vistas de cima, giradas para cada caso (0:+x 1:+y 2:-x 3:-y)
 const RUA_PECAS=[['rua-reta',[1,3]],['rua-curva',[0,1]],['rua-t',[0,1,3]],['rua-cruz',[0,1,2,3]],['rua-fim',[1]]];
 function ruaPeca(nb){const want=[0,1,2,3].filter(d=>nb[d]); const n=want.length;

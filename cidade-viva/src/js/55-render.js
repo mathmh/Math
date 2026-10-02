@@ -30,7 +30,7 @@ function render(now){const t0=performance.now(); camTGT(); const R=visRange(); c
   simulate(now); simPeds(now);
   dlReset(); const tsec=now/1000; FR.seaX=(tsec*.06)%2; FR.seaY=(tsec*.03)%2; FR.rain=W.rain*(QUAL.eco?.8:1); FR.rainT=tsec%1000;
   const chunks=ckVisible(R), [vx,vy,vw,vh]=viewRect(); FR.seaCk=chunks.filter(e=>e.wat);
-  for(const e of chunks)pLayerB(e.base);
+  pushSkirt(); for(const e of chunks)pLayerB(e.base);
   const fa=.45+.25*Math.sin(tsec*1.6); for(const e of chunks)pLayerB(e.foam,fa);
   if(W.wet>.02)for(const e of chunks)pLayerB(e.pud,W.wet);
   const [ax,ay]=s2w(-150,-150),[bx,by]=s2w(VW+150,VH+500);

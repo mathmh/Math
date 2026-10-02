@@ -241,6 +241,8 @@ def emendavel(im, lado=512):
 for slug, brilho, cor_ in [('chao-grama', 1.28, .95), ('chao-areia-praia', 1.04, 1.0), ('chao-areia-deserto', 1.0, 1.0), ('chao-agua', 1.0, 1.0), ('paredao-rocha', 1.0, .9)]:
     im = emendavel(abrir(slug))
     im = ImageEnhance.Color(ImageEnhance.Brightness(im).enhance(brilho)).enhance(cor_)
+    if slug == 'chao-areia-deserto':   # mesma terra avermelhada do lote do arco
+        r, g, b = im.split(); im = Image.merge('RGB', (r.point(lambda v: int(v * .84)), g.point(lambda v: int(v * .76)), b.point(lambda v: int(v * .9))))
     salvar(im, slug, textura=1)
 
 with open(JS, 'w') as f:

@@ -3,7 +3,7 @@
 function extraItems(items,now,n,vis){const nn=n>.5?1:0;
   // neblina passando pela serra (imagens neblina-1/2; se não carregaram, mancha suave)
   const t=now/1000, pk=peaks();
-  for(let i=0;i<pk.length;i++){if(i%2)continue; const p=pk[i], l=decorLote(p), [X,Y]=P(p.x+l.w/2,p.y+l.h/2,0), r=(i*37%97)/97;
+  for(let i=0;i<pk.length;i++){if(i%2||(pk[i].s||1)<1)continue; const p=pk[i], l=decorLote(p), [X,Y]=P(p.x+l.w/2,p.y+l.h/2,decorZ(p)), r=(i*37%97)/97;
     const im=IMGP[i%4?'neblina-1':'neblina-2'], w=(l.w+l.h)*30*(1+r*.5), h=w*.42, dx=Math.sin(t*.04+r*9)*w*.3, cy=Y-(l.w+l.h)*14*(.7+r*.5);
     const al=(.55+.2*Math.sin(t*.06+r*5))*(1-.5*n);
     items.push({d:decorD(p)+.4,t:9,f:()=>{if(im)pImg(im,X+dx-w/2,cy-h/2,w,h,al); else pImg(glowImg(n>.5?'120,135,165':'236,241,246'),X+dx-w/2,cy-h/2,w,h,al*.6);}});}
