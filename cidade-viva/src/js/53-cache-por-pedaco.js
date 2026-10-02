@@ -77,7 +77,7 @@ function drawBase(c,cx,cy){const x0=cx*CH,y0=cy*CH; setIso(c); const e=.03;
       for(let k=0;k<4;k++){const [sx,sy]=CORN[k], B=soilAt(x+sx,y), C=soilAt(x,y+sy); if(B<0||B!==C||B===A||B===1||B===2)continue;
         let p=cp.get(B); if(!p)cp.set(B,p=new Path2D()); cornerPiece(p,x,y,k);}}
     for(const [B,p] of cp){const pt=SOIL_PAT(B); patT(pt,32); c.fillStyle=pt; c.fill(p);}
-    if(!S.ul[cy*NC+cx]){c.fillStyle=LOCK_TINT; c.fillRect(x0-e,y0-e,CH+2*e,CH+2*e);}
+    if(!S.ul[cy*NC+cx]){c.fillStyle=LOCK_TINT; c.beginPath(); for(let y=y0;y<y0+CH;y++)for(let x=x0;x<x0+CH;x++)if(G.tr[y*N+x]!==4)c.rect(x-e,y-e,1+2*e,1+2*e); c.fill(); c.fillStyle='rgba(28,34,22,.1)'; c.fillRect(x0-e,y0-e,CH+2*e,CH+2*e);}
     c.save(); c.beginPath(); c.rect(x0-e,y0-e,CH+2*e,CH+2*e); c.clip(); shadeRect(c,x0-1,y0-1,CH+3,CH+3,true); c.restore(); setIso(c);
     // água: barranco marrom = o contorno engrossado; depois recorta a água (as linhas internas somem junto)
     const W=waterPath(x0,y0);

@@ -242,7 +242,7 @@ for slug, brilho, cor_ in [('chao-grama', 1.28, .95), ('chao-areia-praia', 1.04,
     im = emendavel(abrir(slug))
     im = ImageEnhance.Color(ImageEnhance.Brightness(im).enhance(brilho)).enhance(cor_)
     if slug == 'chao-areia-deserto':   # mesma terra avermelhada do lote do arco
-        r, g, b = im.split(); im = Image.merge('RGB', (r.point(lambda v: int(v * .84)), g.point(lambda v: int(v * .76)), b.point(lambda v: int(v * .9))))
+        r, g, b = im.split(); im = Image.merge('RGB', (r.point(lambda v: min(255,int(v * .97))), g.point(lambda v: int(v * .86)), b.point(lambda v: int(v * .92))))
     salvar(im, slug, textura=1)
 
 with open(JS, 'w') as f:

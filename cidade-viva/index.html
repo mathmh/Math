@@ -751,12 +751,12 @@ const LV_P1=6, LV_P2=3;
 const P1={x:14,y:9,w:16,h:16}, P2={x:20,y:22,w:16,h:16};
 const ARCO={x:8,y:71,w:4,h:3};
 function serraZone(x,y){return (y<=6&&x<=76)||(x<=4&&y<=50)||(x<=13&&y<=40)||(x>=14&&x<=19&&y>=25&&y<=41)||(x>=30&&x<=41&&y<=21)
-  ||(x>=64&&y<=22)||(x>=71&&y<=27);}
+  ||(x>=62&&y<=9)||(x>=70&&y<=12);}
 function peakZone(x,y){return serraZone(x,y)||inLote(ARCO,x,y)||inLote(PORTAL_LOTE,x,y)||(inMap(x,y)&&DECOR_MASK[y*N+x]===1);}
 // maciço: a serra em volta dos platôs fica no nível do platô alto (as montanhas ficam em cima, não abaixo dele)
-function massif(x,y){return (x<=41&&y<=21)||(x>=36&&x<=41&&y<=24)||(x<=13&&y<=40)||(x>=14&&x<=19&&y>=25&&y<=41)||(x<=4&&y<=50);}
+function massif(x,y){return (x<=41&&y<=21)||(x<=13&&y<=40)||(x>=14&&x<=19&&y>=25&&y<=41)||(x<=4&&y<=50);}
 function coastX(y){return 77.2+1.8*Math.sin(y*.21+.7)+1.2*Math.sin(y*.071+2.1)+.8*Math.sin(y*.53);}
-const RIVER=[[44,6],[48,10],[52,14],[56,18],[60,22],[64.5,25.5],[69,28],[74,30],[79,31.5],[86,32.5]];
+const RIVER=[[44,6],[47.5,9.5],[51,13],[56,14.4],[62,15.6],[68,16.8],[74,18],[80,19.2],[86,20.4]];
 function riverDist(x,y){let best=99; for(let k=0;k+1<RIVER.length;k++){const [ax,ay]=RIVER[k],[bx,by]=RIVER[k+1]; const dx=bx-ax,dy=by-ay, t=clamp(((x-ax)*dx+(y-ay)*dy)/(dx*dx+dy*dy),0,1);
   best=Math.min(best,Math.hypot(x-ax-dx*t,y-ay-dy*t));} return best;}
 const LAGO={x:13,y:47,rx:7.2,ry:5.6};
@@ -779,7 +779,7 @@ function genTerrain(seed){const tr=new Uint8Array(N*N), ht=new Uint8Array(N*N), 
   for(let y=0;y<N;y++)for(let x=0;x<N;x++){const i=y*N+x; let v=0, h=0;
     const cx=coastX(y); if(x+.5>cx)v=2; else if(x+.5>cx-2.8-.8*Math.sin(y*.37))v=3;
     if(Math.hypot(x+.5,N-(y+.5))<25+2.5*Math.sin(x*.4+y*.2)&&v===0)v=4;                 // deserto no canto esquerdo
-    if(v!==2&&riverDist(x+.5,y+.5)<1.55+(x>64?Math.min(.6,(x-64)*.05):0)+.25*Math.sin(x*.5+y*.3))v=1;
+    if(v!==2&&riverDist(x+.5,y+.5)<1.6+(x>60?Math.min(.7,(x-60)*.04):0)+.22*Math.sin(x*.5+y*.3))v=1;
     const lv=lakeV(x+.5,y+.5); if(lv<1&&lv>.3)v=1;                                     // lago com ilhota no meio
     if(v===0){if(inP(P1,x,y)&&!(y>P1.y+P1.h-1&&x>=P2.x)&&!(y===P1.y+P1.h-1&&x>=28))h=LV_P1; else if(inP(P2,x,y)&&!(x>P2.x+P2.w-1))h=LV_P2; else if(massif(x,y))h=LV_P1;}
     tr[i]=v; ht[i]=h;}
@@ -798,11 +798,17 @@ const DECOR=(()=>{const L=[], add=(k,x,y,f,sc)=>L.push({k,x,y,f:!!f,s:sc||1});
   add('serra-pico-2',6,9,true); add('serra-pico-4',6,20,true); add('serra-pico-3',6,30,true); add('serra-rocha-2',8,36,true);
   add('serra-pico-4',13,27,true); add('serra-rocha-1',14,35,true);
   add('serra-pico-1',31,6); add('serra-pico-3',33,13); add('serra-rocha-1',37,8); add('serra-rocha-2',35,17,false,.7);
-  add('serra-pico-2',64,-2); add('serra-pico-1',70,2); add('serra-pico-4',65,8); add('serra-rocha-1',72,10);
-  add('serra-pico-3',66,15); add('serra-rocha-2',71,18);
+  add('serra-pico-2',63,-3); add('serra-pico-1',70,-2); add('serra-pico-4',75,2); add('serra-rocha-1',66,4,false,.8); add('serra-rocha-2',72,8,true,.7);
   add('serra-rocha-2',-1,50,true,.55); add('serra-rocha-1',-1,57,false,.5);                 // morrinhos em volta do túnel
   add('arco-do-deserto',ARCO.x,ARCO.y);
   add('pedra-no-mar-1',81,47); add('pedra-no-mar-2',81,62); add('pedra-no-mar-1',80,74,true); add('pedra-no-mar-2',81,14);
+  // buracos da serra: onde nenhuma peça cobre o chão, entra um morro de pedra
+  const LOTE={'serra-pico-1':[8,8],'serra-pico-2':[8,8],'serra-pico-3':[7,7],'serra-pico-4':[7,7],'serra-rocha-1':[5,5],'serra-rocha-2':[5,5],'serra-cordilheira-1':[14,6],'serra-cordilheira-2':[14,6],'arco-do-deserto':[4,3],'pedra-no-mar-1':[2,2],'pedra-no-mar-2':[2,2]};
+  const lote=d=>{const m=LOTE[d.k]||[1,1], k=d.s||1; return d.f?{w:m[1]*k,h:m[0]*k}:{w:m[0]*k,h:m[1]*k};};
+  const cov=new Uint8Array(N*N), mark=d=>{const l=lote(d); for(let y=Math.floor(d.y);y<Math.ceil(d.y+l.h);y++)for(let x=Math.floor(d.x);x<Math.ceil(d.x+l.w);x++)if(inMap(x,y))cov[y*N+x]=1;};
+  L.forEach(mark);
+  for(let y=0;y<N;y+=2)for(let x=0;x<N;x+=2){if(!serraZone(x,y)||cov[y*N+x]||inLote(PORTAL_LOTE,x,y)||inLote(P1,x,y)||riverDist(x+.5,y+.5)<3)continue;
+    const r=hsh(x,y,17)%3, d={k:r?'serra-rocha-1':'serra-rocha-2',x:x-1,y:y-1,f:!!(r%2),s:.5+(hsh(x,y,5)%4)*.08}; L.push(d); mark(d);}
   // pedras e morrinhos no pé dos paredões dos platôs e do maciço (deixam a subida menos brusca)
   const tg=genTerrain(1), H=(x,y)=>inMap(x,y)?tg.ht[y*N+x]:0, road=new Set(presetRoads().map(([x,y])=>y*N+x));
   const nearRoad=(x,y)=>{for(let b=-1;b<=1;b++)for(let a=-1;a<=1;a++)if(road.has((y+b)*N+x+a))return true; return false;};
@@ -2511,7 +2517,7 @@ function drawBase(c,cx,cy){const x0=cx*CH,y0=cy*CH; setIso(c); const e=.03;
       for(let k=0;k<4;k++){const [sx,sy]=CORN[k], B=soilAt(x+sx,y), C=soilAt(x,y+sy); if(B<0||B!==C||B===A||B===1||B===2)continue;
         let p=cp.get(B); if(!p)cp.set(B,p=new Path2D()); cornerPiece(p,x,y,k);}}
     for(const [B,p] of cp){const pt=SOIL_PAT(B); patT(pt,32); c.fillStyle=pt; c.fill(p);}
-    if(!S.ul[cy*NC+cx]){c.fillStyle=LOCK_TINT; c.fillRect(x0-e,y0-e,CH+2*e,CH+2*e);}
+    if(!S.ul[cy*NC+cx]){c.fillStyle=LOCK_TINT; c.beginPath(); for(let y=y0;y<y0+CH;y++)for(let x=x0;x<x0+CH;x++)if(G.tr[y*N+x]!==4)c.rect(x-e,y-e,1+2*e,1+2*e); c.fill(); c.fillStyle='rgba(28,34,22,.1)'; c.fillRect(x0-e,y0-e,CH+2*e,CH+2*e);}
     c.save(); c.beginPath(); c.rect(x0-e,y0-e,CH+2*e,CH+2*e); c.clip(); shadeRect(c,x0-1,y0-1,CH+3,CH+3,true); c.restore(); setIso(c);
     // água: barranco marrom = o contorno engrossado; depois recorta a água (as linhas internas somem junto)
     const W=waterPath(x0,y0);
