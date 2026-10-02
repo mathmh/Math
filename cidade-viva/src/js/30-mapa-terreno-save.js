@@ -4,8 +4,8 @@
 // área inicial: 2×2 áreas de 12×12 no meio do mapa (quadrados 36..59)
 const START_CH=[[3,3],[4,3],[3,4],[4,4]], HZ=13, Q2=N*2;
 // túnel do trem: o portal (imagem de morro com boca de pedra) fica a oeste da área inicial; TUN é o primeiro trilho fora dele
-const TUN={x:36,y:38}, PORTAL={x:35,y:38};
-const PORTAL_LOTE={x:33,y:37,w:3,h:3};
+const TUN={x:39,y:36}, PORTAL={x:38,y:36};
+const PORTAL_LOTE={x:36,y:35,w:3,h:3};   // morro com a boca do túnel, encostado no paredão leste do platô baixo
 // ruído suave (value noise)
 function vnoise(seed){const h=(x,y)=>(hsh(x+seed*7,y-seed*3,seed+11)%10007)/10007;
   return (x,y)=>{const xi=Math.floor(x),yi=Math.floor(y),fx=x-xi,fy=y-yi,sx=fx*fx*(3-2*fx),sy=fy*fy*(3-2*fy);
@@ -20,52 +20,63 @@ const nearPortal=(x,y)=>inLote(PORTAL_LOTE,x,y)||(x>=36&&x<=37&&y===TUN.y);
    - deserto no canto esquerdo com o arco de pedra; mar e praia na borda da direita, com pedras na água;
    - ruas prontas subindo aos dois platôs (com ponte sobre o rio). */
 const LV_P1=6, LV_P2=3;
-const P1={x:12,y:9,w:16,h:16}, P2={x:46,y:8,w:16,h:16};
+// maciço da serra: platô alto P1 atrás, platô baixo P2 na frente (degraus), cercados de montanhas dos lados e atrás;
+// o paredão leste do P2 dá para a cidade e tem o túnel no pé; a estrada sobe em zigue-zague pela frente dos paredões
+const P1={x:14,y:9,w:16,h:16}, P2={x:20,y:22,w:16,h:16};
 const ARCO={x:8,y:71,w:4,h:3};
-function serraZone(x,y){return (y<=6&&x<=76)||(x<=6&&y<=50)||(x+y<=16)||(x>=64&&y<=22)||(x>=71&&y<=27);}
+function serraZone(x,y){return (y<=6&&x<=76)||(x<=6&&y<=50)||(x<=13&&y<=40)||(x>=14&&x<=19&&y>=25&&y<=41)||(x>=30&&x<=41&&y<=21)
+  ||(x>=64&&y<=22)||(x>=71&&y<=27);}
 function peakZone(x,y){return serraZone(x,y)||inLote(ARCO,x,y)||inLote(PORTAL_LOTE,x,y);}
-function coastX(y){const c=77.5+1.6*Math.sin(y*.21+.7)+1.1*Math.sin(y*.071+2.1); return y<24?99:y<30?c+(30-y)*1.5:c;}
-const RIVER=[[36,4],[37,10],[36,17],[38,24],[42,29],[50,30.5],[58,29.5],[64,31],[69,35],[74,39],[80,41],[86,42]];
+function coastX(y){return 77.2+1.8*Math.sin(y*.21+.7)+1.2*Math.sin(y*.071+2.1)+.8*Math.sin(y*.53);}
+const RIVER=[[44,4],[44.5,10],[46.5,16],[50,21],[54.5,25],[59,28],[64.5,31],[69.5,34.5],[74,38.5],[79,41],[86,42.5]];
 function riverDist(x,y){let best=99; for(let k=0;k+1<RIVER.length;k++){const [ax,ay]=RIVER[k],[bx,by]=RIVER[k+1]; const dx=bx-ax,dy=by-ay, t=clamp(((x-ax)*dx+(y-ay)*dy)/(dx*dx+dy*dy),0,1);
   best=Math.min(best,Math.hypot(x-ax-dx*t,y-ay-dy*t));} return best;}
 const LAGO={x:13,y:47,rx:7.2,ry:5.6};
 function lakeV(x,y){const a=Math.atan2(y-LAGO.y,x-LAGO.x), r=1+.1*Math.sin(a*3+1)+.06*Math.sin(a*5); const dx=(x-LAGO.x)/LAGO.rx, dy=(y-LAGO.y)/LAGO.ry; return Math.hypot(dx,dy)/r;}
-// ruas prontas: [x,y,nível,rampa]  (rampa 3 = sobe para oeste, 4 = sobe para norte)
+// ruas prontas: [x,y,nível,rampa]  (rampa 3 = sobe para oeste, 4 = sobe para norte); patamar = quadrado elevado na curva
 function presetRoads(){const out=[], add=(x,y,h,r)=>out.push([x,y,h,r||0]);
-  // P2 (nível 3): sai da avenida x=47, cruza o rio por ponte, sobe pela rampa na frente do paredão
-  for(let y=24;y<=35;y++)add(47,y,0); add(47,26,0,4); add(47,25,1,4); add(47,24,2,4); for(let y=15;y<=23;y++)add(47,y,LV_P2);
-  // P1 (nível 6): sai da rua y=41 para oeste, sobe para o norte e encosta no paredão da frente do P1
-  for(let x=30;x<=35;x++)add(x,41,0); for(let y=33;y<=40;y++)add(30,y,0); for(let x=21;x<=29;x++)add(x,33,0); for(let y=31;y<=33;y++)add(20,y,0);
-  for(let k=0;k<6;k++)add(20,30-k,k,4); for(let y=16;y<=24;y++)add(20,y,LV_P1);
+  const H=(x0,x1,y,h)=>{for(let x=Math.min(x0,x1);x<=Math.max(x0,x1);x++)add(x,y,h);}, V=(x,y0,y1,h)=>{for(let y=Math.min(y0,y1);y<=Math.max(y0,y1);y++)add(x,y,h);};
+  // 1) da avenida y=41: oeste, norte, e a rampa colada no paredão da frente do P2 (sobe para oeste)
+  H(34,35,41,0); V(34,38,40,0); add(33,38,0,3); add(32,38,1,3); add(31,38,2,3); add(30,38,LV_P2);
+  // 2) em cima do P2 em zigue-zague até o pé do paredão do P1
+  V(30,33,37,LV_P2); H(26,29,33,LV_P2); V(26,29,32,LV_P2); H(27,32,29,LV_P2); V(32,26,28,LV_P2);
+  // 3) rampa subindo para oeste encostada no paredão do P1 (y=25 é a frente do P1)
+  add(31,25,LV_P2,3); add(30,25,LV_P2+1,3); add(29,25,LV_P2+2,3); add(28,25,LV_P1);
+  // 4) em cima do P1: entra e faz mais um cotovelo
+  V(28,19,24,LV_P1); H(22,27,19,LV_P1); V(22,12,18,LV_P1);
   return out;}
 function genTerrain(seed){const tr=new Uint8Array(N*N), ht=new Uint8Array(N*N), rp=new Uint8Array(N*N), rd=new Uint8Array(N*N);
   const nz=vnoise(seed+5), rim=(x,y)=>nz(x*.7,y*.7)>.55;      // borda irregular dos platôs (fora do miolo 16×16)
   const inP=(P,x,y)=>inLote(P,x,y)||(x>=P.x-1&&x<=P.x+P.w&&y>=P.y-1&&y<=P.y+P.h&&rim(x,y));
   for(let y=0;y<N;y++)for(let x=0;x<N;x++){const i=y*N+x; let v=0, h=0;
-    const cx=coastX(y); if(x+.5>cx)v=2; else if(x+.5>cx-2.6)v=3;
+    const cx=coastX(y); if(x+.5>cx)v=2; else if(x+.5>cx-2.8-.8*Math.sin(y*.37))v=3;
     if(Math.hypot(x+.5,N-(y+.5))<25+2.5*Math.sin(x*.4+y*.2)&&v===0)v=4;                 // deserto no canto esquerdo
     if(v!==2&&riverDist(x+.5,y+.5)<1.25+(x>60?.35:0))v=1;
     const lv=lakeV(x+.5,y+.5); if(lv<1&&lv>.3)v=1;                                     // lago com ilhota no meio
-    if(v===0&&!serraZone(x,y)){if(inP(P1,x,y))h=LV_P1; else if(inP(P2,x,y))h=LV_P2;}
+    if(v===0){if(inP(P1,x,y)&&!(y>P1.y+P1.h-1&&x>=P2.x)&&!(y===P1.y+P1.h-1&&x>=28))h=LV_P1; else if(inP(P2,x,y)&&!(x>P2.x+P2.w-1))h=LV_P2;}
     tr[i]=v; ht[i]=h;}
   // nada de borda irregular colada nas rampas
-  for(const [x,y] of [[19,25],[21,25],[46,24],[48,24],[20,25],[47,24]])if(inMap(x,y)&&!inLote(P1,x,y)&&!inLote(P2,x,y))ht[y*N+x]=0;
+  for(let y=37;y<=40;y++)for(let x=29;x<=35;x++)if(!inLote(P2,x,y))ht[y*N+x]=0;          // frente do P2 livre para a rampa
+  for(let x=36;x<=39;x++)for(let y=34;y<=38;y++)ht[y*N+x]=0;                                 // pé do paredão onde fica o túnel
   for(const [x,y,h,r] of presetRoads()){const i=y*N+x; if(tr[i]===2)continue; ht[i]=h; rp[i]=r; rd[i]=tr[i]===1?2:1;}
   return {tr,ht,rp,rd};}
 // enfeites fixos do mapa: serra (picos, cordilheiras e morros em imagem), arco, pedras no mar e portal do túnel.
 // k = imagem, x/y = canto de cima do lote, f = espelhado (as da borda esquerda olham para o outro lado)
 const DECOR=(()=>{const L=[], add=(k,x,y,f)=>L.push({k,x,y,f:!!f});
-  // borda de cima-direita (y pequeno): cordilheiras e picos alternados, um pouco sobrepostos
-  const cimaD=[['serra-cordilheira-1',-1],['serra-pico-1',-2],['serra-cordilheira-2',-1],['serra-pico-3',-1],['serra-cordilheira-1',-1],['serra-pico-2',-2],['serra-cordilheira-2',-1],['serra-pico-4',-1]];
-  let x=4; for(let n=0;x<62;n++){const [k,y]=cimaD[n%cimaD.length]; add(k,x,y); x+=k.includes('cordilheira')?10:6;}
-  // borda de cima-esquerda (x pequeno): espelhadas
-  let y=6; for(let n=0;y<46;n++){const [k,x0]=cimaD[(n+3)%cimaD.length]; add(k,x0,y,true); y+=k.includes('cordilheira')?10:6;}
-  add('serra-pico-1',-2,-2); add('serra-pico-3',4,-3); add('serra-pico-2',-3,4,true);           // canto do fundo
-  // canto direito: maciço que desce até o mar
-  add('serra-pico-2',64,-2); add('serra-pico-1',71,1); add('serra-pico-3',76,-2); add('serra-pico-4',66,7); add('serra-rocha-1',73,9);
-  add('serra-pico-3',72,14); add('serra-rocha-2',66,15); add('serra-rocha-1',72,21);
+  // borda de cima-direita (y pequeno): cordilheiras e picos alternados, sobrepostos
+  const seq=[['serra-cordilheira-1',-1],['serra-pico-1',-2],['serra-cordilheira-2',-1],['serra-pico-3',-1],['serra-cordilheira-1',-1],['serra-pico-2',-2],['serra-cordilheira-2',-1],['serra-pico-4',-1]];
+  let x=4; for(let n=0;x<62;n++){const [k,y]=seq[n%seq.length]; add(k,x,y); x+=k.includes('cordilheira')?10:6;}
+  let y=6; for(let n=0;y<46;n++){const [k,x0]=seq[(n+3)%seq.length]; add(k,x0,y,true); y+=k.includes('cordilheira')?10:6;}
+  add('serra-pico-1',-2,-2); add('serra-pico-3',4,-3); add('serra-pico-2',-3,4,true);
+  // em volta do maciço dos platôs: esquerda, frente-esquerda e direita do P1
+  add('serra-pico-2',6,9,true); add('serra-pico-4',6,20,true); add('serra-pico-3',6,30,true); add('serra-rocha-2',8,37,true);
+  add('serra-pico-4',13,27,true); add('serra-rocha-1',14,36,true);
+  add('serra-pico-1',31,6); add('serra-pico-3',33,13); add('serra-rocha-1',37,8);
+  // canto direito descendo até a praia
+  add('serra-pico-2',64,-2); add('serra-pico-1',70,2); add('serra-pico-4',65,8); add('serra-rocha-1',72,10);
+  add('serra-pico-3',66,15); add('serra-rocha-2',71,18);
   add('arco-do-deserto',ARCO.x,ARCO.y);
-  add('pedra-no-mar-1',80,48); add('pedra-no-mar-2',81,64); add('pedra-no-mar-1',79,76,true);
+  add('pedra-no-mar-1',81,47); add('pedra-no-mar-2',81,62); add('pedra-no-mar-1',80,74,true); add('pedra-no-mar-2',81,14);
   return L;})();
 const PEAKS_ALL=DECOR.filter(d=>d.k.startsWith('serra-'));
 const decorChunk=d=>[clamp(Math.floor(d.x/CH),0,NC-1),clamp(Math.floor(d.y/CH),0,NC-1)];

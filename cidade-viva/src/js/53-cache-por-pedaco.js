@@ -47,23 +47,49 @@ function chunkBox(cx,cy){const x0=cx*CH,y0=cy*CH; return tileBox(x0,y0,x0+CH,y0+
 const isWater=i=>G.tr[i]===1||G.tr[i]===2;
 
 /* ---- camadas planas ---- */
+// cantos arredondados entre água/terra e entre tipos de chão (o rio, o lago, a praia e o deserto não ficam em escadinha)
+const CORN=[[-1,-1],[1,-1],[1,1],[-1,1]];
+const isW2=(x,y)=>inMap(x,y)?isWater(y*N+x):(x>=N);
+const soilAt=(x,y)=>inMap(x,y)?G.tr[y*N+x]:-1;
+function cornerPiece(p,x,y,k){const [sx,sy]=CORN[k], cx=x+.5, cy=y+.5, a1=sx>0?0:Math.PI, a2=sy>0?Math.PI/2:-Math.PI/2;
+  p.moveTo(cx+sx*.5,cy+sy*.5); p.lineTo(cx+sx*.5,cy); p.arc(cx,cy,.5,a1,a2,((a2-a1+Math.PI*4)%(Math.PI*2))>Math.PI); p.closePath();}
+function roundedTile(p,x,y,rd){const cx=x+.5,cy=y+.5; p.moveTo(cx,y);
+  const seq=[[1,-Math.PI/2,0],[2,0,Math.PI/2],[3,Math.PI/2,Math.PI],[0,Math.PI,Math.PI*1.5]];
+  for(const [k,a0,a1] of seq){const [sx,sy]=CORN[k]; if(rd[k])p.arc(cx,cy,.5,a0,a1,false); else{p.lineTo(cx+sx*.5,cy+sy*.5); p.lineTo(cx+Math.cos(a1)*.5,cy+Math.sin(a1)*.5);}}
+  p.closePath();}
+// forma da água do quadrado: cantos arredondados onde há terra nos dois lados do canto
+function waterRound(x,y){return [0,1,2,3].map(k=>{const [sx,sy]=CORN[k]; return !isW2(x+sx,y)&&!isW2(x,y+sy)&&inMap(x+sx,y)&&inMap(x,y+sy);});}
+function landCut(x,y){return [0,1,2,3].map(k=>{const [sx,sy]=CORN[k]; return isW2(x+sx,y)&&isW2(x,y+sy)&&isW2(x+sx,y+sy);});}
+// contorno da água do pedaço (quadrados com cantos redondos + pontas de terra cortadas), um quadrado além da borda
+function waterPath(x0,y0){const wp=new Path2D(), lake=new Path2D(); let wat=false, lk=false;
+  for(let y=y0-1;y<=y0+CH;y++)for(let x=x0-1;x<=x0+CH;x++){if(!inMap(x,y))continue; const i=y*N+x, inside=x>=x0&&x<x0+CH&&y>=y0&&y<y0+CH;
+    if(isWater(i)){roundedTile(wp,x,y,waterRound(x,y)); wat=true; if(G.tr[i]===1&&inside){roundedTile(lake,x,y,waterRound(x,y)); lk=true;}}
+    else{const cut=landCut(x,y); for(let k=0;k<4;k++)if(cut[k]){cornerPiece(wp,x,y,k); wat=true; const [sx,sy]=CORN[k]; if(soilAt(x+sx,y)===1&&inside){cornerPiece(lake,x,y,k); lk=true;}}}}
+  return {wp,lake,wat,lk};}
 function drawBase(c,cx,cy){const x0=cx*CH,y0=cy*CH; setIso(c); const e=.03;
+    const under=(x,y)=>{for(const [a,b] of DIRS4){const t=soilAt(x+a,y+b); if(t>=0&&t!==1&&t!==2)return t;} return 0;};   // chão debaixo da água (aparece nos cantos)
     for(const code of [0,3,4,5,6,7]){c.beginPath(); let any=false;
-      for(let y=y0;y<y0+CH;y++)for(let x=x0;x<x0+CH;x++){const i=y*N+x; if(isWater(i))continue; if((G.tr[i]===code)||(code===0&&G.tr[i]===0)){c.rect(x-e,y-e,1+2*e,1+2*e); any=true;}}
+      for(let y=y0;y<y0+CH;y++)for(let x=x0;x<x0+CH;x++){const i=y*N+x; const t=isWater(i)?under(x,y):G.tr[i]; if(t===code){c.rect(x-e,y-e,1+2*e,1+2*e); any=true;}}
       if(any){const p=SOIL_PAT(code); patT(p,32); c.fillStyle=p; c.fill();}}
+    // cantos entre tipos de chão: o canto vira o chão dos dois vizinhos quando eles são iguais
+    const cp=new Map();
+    for(let y=y0;y<y0+CH;y++)for(let x=x0;x<x0+CH;x++){const i=y*N+x; if(isWater(i))continue; const A=G.tr[i];
+      for(let k=0;k<4;k++){const [sx,sy]=CORN[k], B=soilAt(x+sx,y), C=soilAt(x,y+sy); if(B<0||B!==C||B===A||B===1||B===2)continue;
+        let p=cp.get(B); if(!p)cp.set(B,p=new Path2D()); cornerPiece(p,x,y,k);}}
+    for(const [B,p] of cp){const pt=SOIL_PAT(B); patT(pt,32); c.fillStyle=pt; c.fill(p);}
     if(!S.ul[cy*NC+cx]){patT(PAT.lock,32); c.globalAlpha=PAT.grass._k?.38:.55; c.fillStyle=PAT.lock; c.fillRect(x0-e,y0-e,CH+2*e,CH+2*e); c.globalAlpha=1;}
     c.save(); c.beginPath(); c.rect(x0-e,y0-e,CH+2*e,CH+2*e); c.clip(); shadeRect(c,x0-1,y0-1,CH+3,CH+3,true); c.restore(); setIso(c);
-    c.globalCompositeOperation='destination-out'; c.fillStyle='#000'; c.beginPath(); let wat=false;
-    for(let y=y0-1;y<=y0+CH;y++)for(let x=x0-1;x<=x0+CH;x++){if(inMap(x,y)&&isWater(y*N+x)){c.rect(x,y,1,1); wat=true;}}
-    if(wat)c.fill(); c.globalCompositeOperation='source-over';
-    c.fillStyle='rgba(125,200,240,.42)'; c.beginPath(); let lk=false; for(let y=y0;y<y0+CH;y++)for(let x=x0;x<x0+CH;x++)if(G.tr[y*N+x]===1){c.rect(x,y,1,1); lk=true;} if(lk)c.fill();}
+    // água: barranco marrom = o contorno engrossado; depois recorta a água (as linhas internas somem junto)
+    const W=waterPath(x0,y0);
+    if(W.wat){c.save(); c.beginPath(); c.rect(x0-e,y0-e,CH+2*e,CH+2*e); c.clip(); c.lineJoin='round';
+      c.fillStyle='#7d5c3b'; c.strokeStyle='#7d5c3b'; c.lineWidth=.3; c.fill(W.wp); c.stroke(W.wp);
+      c.strokeStyle='rgba(20,60,90,.3)'; c.lineWidth=.12; c.stroke(W.wp);
+      c.globalCompositeOperation='destination-out'; c.fillStyle='#000'; c.fill(W.wp); c.restore(); setIso(c);}
+    c.fillStyle='rgba(125,200,240,.42)'; if(W.lk)c.fill(W.lake);}
 function bakeGround(cx,cy,rs){const bb=chunkBox(cx,cy);
   return mkLayer(bb[0]-2,bb[1]-64,bb[2]+2,bb[3]+26,rs,c=>{drawBase(c,cx,cy); drawDetail(c,cx,cy);});}
 function drawDetail(c,cx,cy){const x0=cx*CH,y0=cy*CH, owned=!!S.ul[cy*NC+cx]; setIso(c);
     const land=(x,y)=>inMap(x,y)&&!isWater(y*N+x);
-    c.beginPath(); const bsh=new Path2D();
-    for(let y=y0;y<y0+CH;y++)for(let x=x0;x<x0+CH;x++){if(!isWater(y*N+x))continue; if(land(x-1,y)){c.rect(x,y,.16,1); bsh.rect(x+.16,y,.08,1);} if(land(x,y-1)){c.rect(x,y,1,.16); bsh.rect(x,y+.16,1,.08);}}
-    c.fillStyle='#7d5c3b'; c.fill(); c.fillStyle='rgba(20,60,90,.35)'; c.fill(bsh);
     for(let y=y0;y<y0+CH;y++)for(let x=x0;x<x0+CH;x++){const i=y*N+x; if(elev(i))continue; if(G.tr[i]===1&&G.rl[i])railTile(c,x,y,true); else if(!isWater(i))tileTop(c,x,y);}
     const br=[]; for(let y=y0;y<y0+CH;y++)for(let x=x0;x<x0+CH;x++)if(G.rd[y*N+x]===2)br.push([x,y]); br.sort((a,b)=>a[0]+a[1]-b[0]-b[1]);
     for(const [x,y] of br)bridgeTile(c,x,y,false);
@@ -71,11 +97,14 @@ function drawDetail(c,cx,cy){const x0=cx*CH,y0=cy*CH, owned=!!S.ul[cy*NC+cx]; se
     setW(c); if(cy===NC-1){const xa=x0,xb=Math.min(x0+CH,Math.floor(coastX(N-1))-3); if(xb>xa)poly(c,[P(xa,N),P(xb,N),P(xb,N,-20),P(xa,N,-20)],'#7a5a3a');}
     if(cx===0)poly(c,[P(0,y0),P(0,y0+CH),P(0,y0+CH,-20),P(0,y0,-20)],'#5f4429');}
 function qHasPv(x,y){const a=(y*2)*Q2+x*2,b=a+Q2; return G.pv[a]||G.pv[a+1]||G.pv[b]||G.pv[b+1];}
-function bakeFoam(cx,cy,rs){const x0=cx*CH,y0=cy*CH, bb=chunkBox(cx,cy); const land=(x,y)=>inMap(x,y)&&!isWater(y*N+x);
-  const pth=new Path2D(); let any=false;
-  for(let y=y0;y<y0+CH;y++)for(let x=x0;x<x0+CH;x++){const i=y*N+x; if(!isWater(i))continue;
-    if(land(x+1,y)){pth.rect(x+.9,y,.1,1);any=true;} if(land(x,y+1)){pth.rect(x,y+.9,1,.1);any=true;} if(G.tr[i]===2&&land(x-1,y)){pth.rect(x+.24,y,.08,1);any=true;}}
-  if(!any)return null; return mkLayer(bb[0]-2,bb[1]-2,bb[2]+2,bb[3]+2,rs,c=>{setIso(c); c.fillStyle='#fff'; c.fill(pth);});}
+// espuma: anel fino em volta da água, seguindo o contorno redondo
+function bakeFoam(cx,cy,rs){const x0=cx*CH,y0=cy*CH, bb=chunkBox(cx,cy); let any=false;
+  for(let y=y0;y<y0+CH&&!any;y++)for(let x=x0;x<x0+CH;x++){if(isWater(y*N+x)){any=true;break;}}
+  if(!any)return null; const W=waterPath(x0,y0);
+  return mkLayer(bb[0]-2,bb[1]-2,bb[2]+2,bb[3]+2,rs,c=>{setIso(c); c.save(); c.beginPath(); c.rect(x0,y0,CH,CH); c.clip(); c.lineJoin='round';
+    c.strokeStyle='#fff'; c.lineWidth=.16; c.stroke(W.wp); c.globalCompositeOperation='destination-out'; c.lineWidth=.02; c.fillStyle='#000';
+    c.save(); c.clip(W.wp); c.fillRect(x0,y0,CH,CH); c.restore(); c.restore();   // fica só a metade de fora: a linha d'água na beira
+  });}
 function bakePuddles(cx,cy,rs){const x0=cx*CH,y0=cy*CH, bb=chunkBox(cx,cy); const spots=[];
   for(let y=y0;y<y0+CH;y++)for(let x=x0;x<x0+CH;x++){const i=y*N+x; if(elev(i))continue; const h=hsh(x,y,77);
     if(G.rd[i]===1&&h%5<2)spots.push([x+.25+(h%7)/14,y+.25+((h>>3)%7)/14,.17+(h%3)*.04]); else if(qHasPv(x,y)&&h%4===0)spots.push([x+.5,y+.5,.12]);}
