@@ -1,5 +1,5 @@
 /* ================= Constantes ================= */
-const TW=64, TH=32, N=84, CH=12, NC=7, SS=2;
+const TW=64, TH=32, N=96, CH=12, NC=8, SS=2;
 const SAVE_KEY='cidadeviva_save_v2', OLD_KEY='cidadeviva_save_v1', ART_KEY='cidadeviva_art_v1', OPT_KEY='cidadeviva_opts_v1';
 const $=s=>document.querySelector(s);
 const fmtN=n=>Math.floor(n).toLocaleString('pt-BR');

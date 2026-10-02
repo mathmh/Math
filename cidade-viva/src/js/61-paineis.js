@@ -223,7 +223,7 @@ $('#bMenu').onclick=()=>{if(sheetKind==='menu')closeSheet(); else openMenu();};
 $('#hLvl').onclick=()=>{toast('Nível '+S.lv+' · faltam '+fmtN(cumXp(S.lv+1)-S.xp)+' XP para o próximo');};
 
 function resize(){const r=$('#app').getBoundingClientRect(); VW=r.width; VH=r.height; DPR=Math.min(QUAL.dprCap,window.devicePixelRatio||1); cv.width=Math.round(VW*DPR); cv.height=Math.round(VH*DPR); BK.resize();}
-function centerStart(){const [x,y]=P(44,41); cam.x=x; cam.y=y; cam.z=clamp(Math.min(VW/520,VH/440),.6,1.5); clampCam();}
+function centerStart(){const [x,y]=P(56,53); cam.x=x; cam.y=y; cam.z=clamp(Math.min(VW/520,VH/440),.6,1.5); clampCam();}
 function afterLoad(){derive(); refreshQuests(); closeSheet(); setMode({t:'idle'}); centerStart(); updateHud();}
 setInterval(()=>{if(!S)return; systemsTick(Date.now()); derive(); updateHud(); updateWx();
   if(sheetKind==='info'&&sheetData){const b=byId(sheetData.id); if(!b)closeSheet(); else if(infoKey(b)!==sheetKey)openInfo(b); else liveTimers();}

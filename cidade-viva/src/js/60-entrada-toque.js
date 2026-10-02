@@ -34,7 +34,20 @@ window.addEventListener('keydown',e=>{if(e.target&&(e.target.tagName==='INPUT'||
   if(e.key==='Escape'){if(!$('#modal').hidden)return; if(mode.t!=='idle')setMode({t:'idle'}); else closeSheet();}
   if((e.key==='r'||e.key==='R')&&(mode.t==='place'||mode.t==='move'))rotateGhost();});
 const ZMAX=3.2;
-function clampCam(){cam.z=clamp(cam.z,.3,ZMAX); cam.x=clamp(cam.x,-N*TW/2,N*TW/2+200); cam.y=clamp(cam.y,0,N*TH);}
+// trava da câmera: a tela fica dentro do mapa; só deixa ver um pouco da continuação à esquerda (abaixo da serra) e na frente
+// (abaixo do deserto); atrás da serra e além do mar não passa
+const CAM_OUT=15;
+function zMin(){const D=N+8; return Math.max(.3,(VW/(D*64)+VH/(D*32))*1.04);}
+function clampCam(){cam.z=clamp(cam.z,Math.min(zMin(),ZMAX),ZMAX); const hw=VW/2/cam.z, hh=VH/2/cam.z;
+  for(let it=0;it<8;it++){let moved=false;
+    const corner=(sx,sy)=>{const X=cam.x+sx*hw, Y=cam.y+sy*hh; return [(Y/16+X/32)/2,(Y/16-X/32)/2];};
+    const fix=(dx,dy,amt)=>{if(amt<=1e-6)return; cam.x+=dx*amt; cam.y+=dy*amt; moved=true;};
+    // gx sobe na direção (32,16), gy na direção (-32,16)
+    let [gx,gy]=corner(-1,-1); fix(32,16,(gy<52?-1:-CAM_OUT)-gx);          // canto de cima-esquerda: borda esquerda
+    [gx,gy]=corner(-1,1); fix(32,16,-CAM_OUT-gx); [gx,gy]=corner(-1,1); fix(32,-16,gy-(N+CAM_OUT));   // baixo-esquerda
+    [gx,gy]=corner(1,-1); fix(-32,16,-1-gy);                                    // cima-direita: atrás da serra
+    [gx,gy]=corner(1,1); fix(-32,-16,gx-(N+12)); [gx,gy]=corner(1,1); fix(32,-16,gy-(N+CAM_OUT));       // baixo-direita (mar)
+    if(!moved)break;}}
 function setGhost(sx,sy){const [gx,gy]=pickG(sx,sy); const k=mode.t==='place'?mode.k:byId(mode.i).k, t=T[k], w=mode.f?t.h:t.w,h=mode.f?t.w:t.h;
   const nx=Math.floor(gx)-Math.floor((w-1)/2), ny=Math.floor(gy)-Math.floor((h-1)/2);
   if(mode.has&&nx===mode.gx&&ny===mode.gy)return false; mode.gx=nx;mode.gy=ny;mode.has=true; if(mode.lineOn&&mode.anchor)mode.line=lineCells(k,mode.anchor[0],mode.anchor[1],nx,ny,mode.f); updatePlaceBar();return true;}

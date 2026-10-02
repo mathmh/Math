@@ -1,18 +1,18 @@
 /* ================= Mapa ================= */
 // tr: 0 grama, 1 água, 2 mar, 3 areia de praia, 4 deserto, 5 terra, 6 neve · ht: nível 0-4 · rp: rampa (1-4 = direção que sobe)
 // rd: 0 nada, 1 rua, 2 ponte · bm: modelo da ponte · rl: 1 trilho · ob: obstáculo · pv/fc: calçadas e cercas (grade de 1/4 de quadrado)
-// área inicial: 2×2 áreas de 12×12 no meio do mapa (quadrados 36..59)
+// área inicial: 2×2 áreas de 12×12 no meio do mapa (quadrados 48..71)
 const inMap=(x,y)=>x>=0&&y>=0&&x<N&&y<N;
-const START_CH=[[3,3],[4,3],[3,4],[4,4]], HZ=13, Q2=N*2;
+const START_CH=[[4,4],[5,4],[4,5],[5,5]], HZ=13, Q2=N*2;
 // túnel do trem: o portal (imagem de morro com boca de pedra) fica a oeste da área inicial; TUN é o primeiro trilho fora dele
-const TUN={x:3,y:56}, PORTAL={x:2,y:56};
-const PORTAL_LOTE={x:0,y:55,w:3,h:3};   // morro com a boca do túnel na borda esquerda do mapa; o trilho vem reto até a área inicial
-const RAIL_END=37;
+const TUN={x:3,y:66}, PORTAL={x:2,y:66};
+const PORTAL_LOTE={x:0,y:65,w:3,h:3};   // morro com a boca do túnel na borda esquerda do mapa; o trilho vem reto até a área inicial
+const RAIL_END=49;
 // ruído suave (value noise)
 function vnoise(seed){const h=(x,y)=>(hsh(x+seed*7,y-seed*3,seed+11)%10007)/10007;
   return (x,y)=>{const xi=Math.floor(x),yi=Math.floor(y),fx=x-xi,fy=y-yi,sx=fx*fx*(3-2*fx),sy=fy*fy*(3-2*fy);
     const a=h(xi,yi),b=h(xi+1,yi),c=h(xi,yi+1),d=h(xi+1,yi+1); return a+(b-a)*sx+(c-a)*sy+(a-b-c+d)*sx*sy;};}
-const inStart=(x,y)=>x>=36&&x<60&&y>=36&&y<60;
+const inStart=(x,y)=>x>=48&&x<72&&y>=48&&y<72;
 const inLote=(L,x,y)=>x>=L.x&&x<L.x+L.w&&y>=L.y&&y<L.y+L.h;
 const nearPortal=(x,y)=>inLote(PORTAL_LOTE,x,y)||(y===TUN.y&&x>=TUN.x&&x<=RAIL_END);
 /* Mapa fixo (o mesmo em todo jogo novo), desenhado a partir da imagem de referência:
@@ -25,23 +25,24 @@ const LV_P1=6, LV_P2=3;
 // maciço da serra: platô alto P1 atrás, platô baixo P2 na frente (degraus), cercados de montanhas dos lados e atrás;
 // o paredão leste do P2 dá para a cidade e tem o túnel no pé; a estrada sobe em zigue-zague pela frente dos paredões
 const P1={x:14,y:9,w:16,h:16}, P2={x:20,y:22,w:16,h:16};
-const ARCO={x:8,y:71,w:4,h:3};
-function serraZone(x,y){return (y<=6&&x<=76)||(x<=4&&y<=50)||(x<=13&&y<=40)||(x>=14&&x<=19&&y>=25&&y<=41)||(x>=30&&x<=41&&y<=21)
-  ||(x>=62&&y<=9)||(x>=70&&y<=12);}
+const ARCO={x:8,y:83,w:4,h:3};
+function serraZone(x,y){return (y<=6&&x<=88)||(x<=4&&y<=50)||(x<=13&&y<=40)||(x>=14&&x<=19&&y>=25&&y<=41)||(x>=30&&x<=41&&y<=21)
+  ||(x>=74&&y<=9)||(x>=82&&y<=12);}
 function peakZone(x,y){return serraZone(x,y)||inLote(ARCO,x,y)||inLote(PORTAL_LOTE,x,y)||(inMap(x,y)&&DECOR_MASK[y*N+x]===1);}
 // maciço: a serra em volta dos platôs fica no nível do platô alto (as montanhas ficam em cima, não abaixo dele)
 function massif(x,y){return (x<=41&&y<=21)||(x<=13&&y<=40)||(x>=14&&x<=19&&y>=25&&y<=41)||(x<=4&&y<=50);}
-function coastX(y){return 77.2+1.8*Math.sin(y*.21+.7)+1.2*Math.sin(y*.071+2.1)+.8*Math.sin(y*.53);}
+// costa: a parte da frente do mapa (y>41) ganhou 12 linhas de campo no meio
+function coastX(y){y=y<=41?y:y<54?41:y-12; return 89.2+1.8*Math.sin(y*.21+.7)+1.2*Math.sin(y*.071+2.1)+.8*Math.sin(y*.53);}
 const RIVER=[[44,6],[47.5,9.5],[51,13],[56,14.4],[62,15.6],[68,16.8],[74,18],[80,19.2],[86,20.4]];
 function riverDist(x,y){let best=99; for(let k=0;k+1<RIVER.length;k++){const [ax,ay]=RIVER[k],[bx,by]=RIVER[k+1]; const dx=bx-ax,dy=by-ay, t=clamp(((x-ax)*dx+(y-ay)*dy)/(dx*dx+dy*dy),0,1);
   best=Math.min(best,Math.hypot(x-ax-dx*t,y-ay-dy*t));} return best;}
-const LAGO={x:13,y:47,rx:7.2,ry:5.6};
+const LAGO={x:13,y:57,rx:7.2,ry:5.6};
 function lakeV(x,y){const a=Math.atan2(y-LAGO.y,x-LAGO.x), r=1+.1*Math.sin(a*3+1)+.06*Math.sin(a*5); const dx=(x-LAGO.x)/LAGO.rx, dy=(y-LAGO.y)/LAGO.ry; return Math.hypot(dx,dy)/r;}
 // ruas prontas: [x,y,nível,rampa]  (rampa 3 = sobe para oeste, 4 = sobe para norte); patamar = quadrado elevado na curva
 function presetRoads(){const out=[], add=(x,y,h,r)=>out.push([x,y,h,r||0]);
   const H=(x0,x1,y,h)=>{for(let x=Math.min(x0,x1);x<=Math.max(x0,x1);x++)add(x,y,h);}, V=(x,y0,y1,h)=>{for(let y=Math.min(y0,y1);y<=Math.max(y0,y1);y++)add(x,y,h);};
   // 1) da avenida y=41: oeste, norte, e a rampa colada no paredão da frente do P2 (sobe para oeste)
-  H(34,35,41,0); V(34,38,40,0); add(33,38,0,3); add(32,38,1,3); add(31,38,2,3); add(30,38,LV_P2);
+  H(35,47,53,0); V(34,38,53,0); add(33,38,0,3); add(32,38,1,3); add(31,38,2,3); add(30,38,LV_P2);
   // 2) em cima do P2 em zigue-zague até o pé do paredão do P1
   V(30,33,37,LV_P2); H(26,29,33,LV_P2); V(26,29,32,LV_P2); H(27,32,29,LV_P2); V(32,26,28,LV_P2);
   // 3) rampa subindo para oeste encostada no paredão do P1 (y=25 é a frente do P1)
@@ -55,7 +56,7 @@ function genTerrain(seed){const tr=new Uint8Array(N*N), ht=new Uint8Array(N*N), 
   for(let y=0;y<N;y++)for(let x=0;x<N;x++){const i=y*N+x; let v=0, h=0;
     const cx=coastX(y); if(x+.5>cx)v=2; else if(x+.5>cx-2.8-.8*Math.sin(y*.37))v=3;
     if(Math.hypot(x+.5,N-(y+.5))<25+2.5*Math.sin(x*.4+y*.2)&&v===0)v=4;                 // deserto no canto esquerdo
-    if(v!==2&&riverDist(x+.5,y+.5)<1.6+(x>60?Math.min(.7,(x-60)*.04):0)+.22*Math.sin(x*.5+y*.3))v=1;
+    if(v!==2&&riverDist(x+.5,y+.5)<1.6+(x>72?Math.min(.7,(x-72)*.04):0)+.22*Math.sin(x*.5+y*.3))v=1;
     const lv=lakeV(x+.5,y+.5); if(lv<1&&lv>.3)v=1;                                     // lago com ilhota no meio
     if(v===0){if(inP(P1,x,y)&&!(y>P1.y+P1.h-1&&x>=P2.x)&&!(y===P1.y+P1.h-1&&x>=28))h=LV_P1; else if(inP(P2,x,y)&&!(x>P2.x+P2.w-1))h=LV_P2; else if(massif(x,y))h=LV_P1;}
     tr[i]=v; ht[i]=h;}
@@ -68,16 +69,15 @@ function genTerrain(seed){const tr=new Uint8Array(N*N), ht=new Uint8Array(N*N), 
 const DECOR_MASK=new Uint8Array(N*N);
 const DECOR=(()=>{const L=[], add=(k,x,y,f,sc)=>L.push({k,x,y,f:!!f,s:sc||1});
   const seq=[['serra-cordilheira-1',-1],['serra-pico-1',-2],['serra-cordilheira-2',-1],['serra-pico-3',-1],['serra-cordilheira-1',-1],['serra-pico-2',-2],['serra-cordilheira-2',-1],['serra-pico-4',-1]];
-  let x=4; for(let n=0;x<62;n++){const [k,y]=seq[n%seq.length]; add(k,x,y); x+=k.includes('cordilheira')?10:6;}
+  let x=4; for(let n=0;x<74;n++){const [k,y]=seq[n%seq.length]; add(k,x,y); x+=k.includes('cordilheira')?10:6;}
   let y=6; for(let n=0;y<46;n++){const [k,x0]=seq[(n+3)%seq.length]; add(k,x0,y,true); y+=k.includes('cordilheira')?10:6;}
   add('serra-pico-1',-2,-2); add('serra-pico-3',4,-3); add('serra-pico-2',-3,4,true);
   add('serra-pico-2',6,9,true); add('serra-pico-4',6,20,true); add('serra-pico-3',6,30,true); add('serra-rocha-2',8,36,true);
   add('serra-pico-4',13,27,true); add('serra-rocha-1',14,35,true);
   add('serra-pico-1',31,6); add('serra-pico-3',33,13); add('serra-rocha-1',37,8); add('serra-rocha-2',35,17,false,.7);
-  add('serra-pico-2',63,-3); add('serra-pico-1',70,-2); add('serra-pico-4',75,2); add('serra-rocha-1',66,4,false,.8); add('serra-rocha-2',72,8,true,.7);
-  add('serra-rocha-2',-1,50,true,.55); add('serra-rocha-1',-1,57,false,.5);                 // morrinhos em volta do túnel
+  add('serra-pico-2',75,-3); add('serra-pico-1',82,-2); add('serra-pico-4',87,2); add('serra-rocha-1',78,4,false,.8); add('serra-rocha-2',84,8,true,.7);
   add('arco-do-deserto',ARCO.x,ARCO.y);
-  add('pedra-no-mar-1',81,47); add('pedra-no-mar-2',81,62); add('pedra-no-mar-1',80,74,true); add('pedra-no-mar-2',81,14);
+  add('pedra-no-mar-1',93,47); add('pedra-no-mar-2',93,66); add('pedra-no-mar-1',92,86,true); add('pedra-no-mar-2',93,16);
   // buracos da serra: onde nenhuma peça cobre o chão, entra um morro de pedra
   const LOTE={'serra-pico-1':[8,8],'serra-pico-2':[8,8],'serra-pico-3':[7,7],'serra-pico-4':[7,7],'serra-rocha-1':[5,5],'serra-rocha-2':[5,5],'serra-cordilheira-1':[14,6],'serra-cordilheira-2':[14,6],'arco-do-deserto':[4,3],'pedra-no-mar-1':[2,2],'pedra-no-mar-2':[2,2]};
   const lote=d=>{const m=LOTE[d.k]||[1,1], k=d.s||1; return d.f?{w:m[1]*k,h:m[0]*k}:{w:m[0]*k,h:m[1]*k};};
@@ -119,7 +119,7 @@ function emptyD(){return {pop:0,popCap:0,gCap:0,occ:new Int32Array(N*N).fill(-1)
 D=emptyD();
 function newGame(keep){
   const now=Date.now(), seed=(Math.random()*1e9)|0;
-  const s={v:5,coins:1500,goods:60,inv:{wood:10,stone:10,steel:0,rubber:0,tools:0,tires:0,cars:0},xp:0,lv:1,ul:Array(NC*NC).fill(0),b:[],nid:1,seed,
+  const s={v:SAVE_VER,coins:1500,goods:60,inv:{wood:10,stone:10,steel:0,rubber:0,tools:0,tires:0,cars:0},xp:0,lv:1,ul:Array(NC*NC).fill(0),b:[],nid:1,seed,
     st:{rent:0,biz:0,supply:0,harvest:0,plant:0,train:0,expand:0,clear:0,road:0,bridge:0,dig:0,prod:0,build:0,order:0,export:0,terra:0},q:{done:[],base:{}},t:now,
     col:{}, ord:[], ordT:[0,0,0], ch:null, title:0, taxT:now, evSeen:''};
   fillNewState(s,now);
@@ -128,22 +128,22 @@ function newGame(keep){
   for(let x=TUN.x;x<=RAIL_END;x++){const i=TUN.y*N+x; G.rl[i]=1; G.ob[i]=0;}
   const add=(k,x,y,extra)=>{const t=T[k]; s.b.push(Object.assign({i:s.nid++,k,x,y,f:0,lv:1,d:now,a:0,s:0},extra||{}));
     for(let dy=0;dy<t.h;dy++)for(let dx=0;dx<t.w;dx++)G.ob[(y+dy)*N+x+dx]=0;};
-  for(let x=36;x<=59;x++){G.rd[41*N+x]=1;G.ob[41*N+x]=0;}
-  for(let y=36;y<=59;y++){const i=y*N+47; G.rd[i]=1; G.ob[i]=0;}
-  add('hall',43,38);
-  add('casinha',37,39,{a:now+20000}); add('chale',39,39,{a:now+45000});
-  add('padaria',48,39); add('geminadas',50,39,{a:now+30000});
-  add('plot',37,42,{s:''}); add('plot',39,42,{s:'straw',a:now+15000});
-  add('arvore',41,39); add('arvore',42,40); add('flores',46,40); add('flores',41,40);
-  for(let qy=84;qy<=91;qy++)G.pv[qy*Q2+86]=1;
-  for(let qx=82;qx<=85;qx++)G.fc[87*Q2+qx]=1;
+  for(let x=48;x<=71;x++){G.rd[53*N+x]=1;G.ob[53*N+x]=0;}
+  for(let y=48;y<=71;y++){const i=y*N+59; G.rd[i]=1; G.ob[i]=0;}
+  add('hall',55,50);
+  add('casinha',49,51,{a:now+20000}); add('chale',51,51,{a:now+45000});
+  add('padaria',60,51); add('geminadas',62,51,{a:now+30000});
+  add('plot',49,54,{s:''}); add('plot',51,54,{s:'straw',a:now+15000});
+  add('arvore',53,51); add('arvore',54,52); add('flores',58,52); add('flores',53,52);
+  for(let qy=108;qy<=115;qy++)G.pv[qy*Q2+110]=1;
+  for(let qx=106;qx<=109;qx++)G.fc[111*Q2+qx]=1;
   if(keep){s.coins=Math.max(s.coins,keep.coins||0); s.goods=Math.min(400,Math.max(60,keep.goods||0)); s.xp=keep.xp||0; s.lv=keep.lv||1; s.st.rent=keep.st?.rent||0;}
   return s;}
 const GRID_KEYS=['tr','ht','rp','rd','bm','rl','ob','pv','fc'];
 function serialize(){const enc=a=>{let s=''; for(let i=0;i<a.length;i++)s+=a[i].toString(36); return s;};
   const o=Object.assign({},S); for(const k of GRID_KEYS)o['g_'+k]=enc(G[k]); return JSON.stringify(o);}
 // v5 = mapa 84×84 (áreas de 12×12). Saves do mapa antigo (v2 a v4) não servem mais: viram jogo novo (com cópia guardada).
-const SAVE_VER=5;
+const SAVE_VER=6;   // v6 = mapa 96×96
 function hydrate(s){if(!s||!Array.isArray(s.b)||s.v!==SAVE_VER)return false;
   const dec=(str,len)=>{const a=new Uint8Array(len); if(str)for(let i=0;i<len&&i<str.length;i++)a[i]=parseInt(str[i],36)||0; return a;};
   const g=emptyGrids();

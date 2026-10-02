@@ -2,7 +2,7 @@
  Alterna sozinho a cada 8 minutos (mesmo padrão para todo mundo, como os eventos).
  Chuva: gotas, céu mais escuro, poças; plantações crescem 50% mais rápido e o turismo cai um pouco. */
 const WX_SLOT=8*60000, WX_NAMES=['Sol','Nublado','Chuva'], WX_ICO=['☀️','⛅','🌧️'];
-function wxKind(slot){if(OPT.wx==='sol')return 0; if(OPT.wx==='chuva')return 2; const h=hsh(slot,91,7)%100; return h<62?0:h<89?1:2;}   // chuva em ~11% do tempo
+function wxKind(slot){if(OPT.wx==='sol')return 0; if(OPT.wx==='chuva')return 2; const h=hsh(slot,91,7)%100; return h<78?0:h<89?1:2;}   // sol ~78%, nublado ~11%, chuva ~11%
 function weatherNow(now){const slot=Math.floor(now/WX_SLOT), f=(now%WX_SLOT)/WX_SLOT, k=wxKind(slot), kp=wxKind(slot-1);
   const t=clamp(f/.1,0,1), cl=q=>q===0?0:q===1?.6:1;
   const cloud=cl(k)*t+cl(kp)*(1-t), rain=(k===2?t:0)+(kp===2?1-t:0);

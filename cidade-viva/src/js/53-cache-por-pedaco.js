@@ -86,8 +86,24 @@ function drawBase(c,cx,cy){const x0=cx*CH,y0=cy*CH; setIso(c); const e=.03;
       c.strokeStyle='rgba(20,60,90,.3)'; c.lineWidth=.12; c.stroke(W.wp);
       c.globalCompositeOperation='destination-out'; c.fillStyle='#000'; c.fill(W.wp); c.restore(); setIso(c);}
     c.fillStyle='rgba(125,200,240,.42)'; if(W.lk)c.fill(W.lake);}
+// terreno de fora do mapa (continuação à esquerda e na frente): só paisagem, a câmera não passa muito dele
+const OUT=18;
+function outCells(cx,cy){const x0=cx*CH,y0=cy*CH, out=[];
+  if(cx===0)for(let y=y0;y<y0+CH+(cy===NC-1?OUT:0);y++)for(let x=-OUT;x<0;x++)out.push([x,y]);
+  if(cy===NC-1)for(let y=N;y<N+OUT;y++)for(let x=x0;x<x0+CH;x++)out.push([x,y]);
+  return out;}
+function drawOutside(c,cx,cy){const cells=outCells(cx,cy); if(!cells.length)return; setIso(c); const e=.03, by=new Map(), trees=[];
+  for(const [x,y] of cells){const X=clamp(x,0,N-1), Y=clamp(y,0,N-1); let t=G.tr[Y*N+X]; if(t===2)continue; if(t===1||t===3)t=0;
+    const lago=lakeV(x+.5,Math.min(y,N-1)+.5)<1&&x>=0; if(lago)t=0;
+    let p=by.get(t); if(!p)by.set(t,p=new Path2D()); p.rect(x-e,y-e,1+2*e,1+2*e);
+    const h=hsh(x+40,y+40,23); if(t===0&&h%5===0)trees.push([x,y,h%3===0?1:2]); else if(t===4&&h%11===0)trees.push([x,y,5]);}
+  for(const [t,p] of by){const pt=SOIL_PAT(t); patT(pt,32); c.fillStyle=pt; c.fill(p); c.fillStyle=LOCK_TINT; c.fill(p);}
+  trees.sort((a,b)=>a[0]+a[1]-b[0]-b[1]); setW(c);
+  for(const [x,y,o] of trees){const [X,Y]=P(x,y,0), v=hsh(x,y,1)%3; drawSprite(c,sprite('o',o,v,false),X,Y,v===1);}}
 function bakeGround(cx,cy,rs){const bb=chunkBox(cx,cy);
-  return mkLayer(bb[0]-2,bb[1]-64,bb[2]+2,bb[3]+26,rs,c=>{drawBase(c,cx,cy); drawDetail(c,cx,cy);});}
+  if(cx===0||cy===NC-1){const x0=cx*CH,y0=cy*CH; const ob=tileBox(cx===0?x0-OUT:x0,y0,x0+CH,cy===NC-1?y0+CH+OUT:y0+CH,0,0);
+    for(let k=0;k<4;k++)bb[k]=k<2?Math.min(bb[k],ob[k]):Math.max(bb[k],ob[k]);}
+  return mkLayer(bb[0]-2,bb[1]-64,bb[2]+2,bb[3]+26,rs,c=>{drawOutside(c,cx,cy); drawBase(c,cx,cy); drawDetail(c,cx,cy);});}
 function drawDetail(c,cx,cy){const x0=cx*CH,y0=cy*CH, owned=!!S.ul[cy*NC+cx]; setIso(c);
     const land=(x,y)=>inMap(x,y)&&!isWater(y*N+x);
     for(let y=y0;y<y0+CH;y++)for(let x=x0;x<x0+CH;x++){const i=y*N+x; if(elev(i))continue; if(G.tr[i]===1&&G.rl[i])railTile(c,x,y,true); else if(!isWater(i))tileTop(c,x,y);}
