@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
-<title>Cidade Viva</title>
+<title>MathCity</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&display=swap" rel="stylesheet">
@@ -879,7 +879,7 @@ function hydrate(s){if(!s||!Array.isArray(s.b)||s.v!==SAVE_VER)return false;
   if(!s.col)s.col={}; if(!s.ord)s.ord=[]; if(!s.ordT)s.ordT=[0,0,0]; if(s.title==null)s.title=0; if(!s.taxT)s.taxT=Date.now();
   S=s; G=g; mapVer++; return true;}
 // campos novos da versão 4 (leis, tecnologia, pedidos, cadeias, histórico...)
-function fillNewState(s,now){if(!s.name)s.name='Cidade Viva'; if(!s.laws)s.laws={}; if(!s.lawT)s.lawT=now; if(!s.tech)s.tech=[]; if(s.rp==null)s.rp=0; if(!s.rpT)s.rpT=now;
+function fillNewState(s,now){if(!s.name||s.name==='Cidade Viva')s.name='Minha Cidade'; if(!s.laws)s.laws={}; if(!s.lawT)s.lawT=now; if(!s.tech)s.tech=[]; if(s.rp==null)s.rp=0; if(!s.rpT)s.rpT=now;
   if(!s.chain)s.chain={}; if(!s.chainBase)s.chainBase={}; if(!s.unl)s.unl={}; if(!s.req)s.req=[]; if(!s.reqT)s.reqT=now+90000; if(s.reqDone==null)s.reqDone=0;
   if(!s.hist)s.hist=[]; if(!s.histT)s.histT=0; if(!s.fireT)s.fireT=now+5*60000;
   for(const k of ['ore','lime'])if(s.inv&&s.inv[k]==null)s.inv[k]=0;
@@ -3532,7 +3532,7 @@ function showLevelUp(){const L=levelQueue.shift(); if(L==null)return;
     '<div class="acts"><button class="pill gold" id="mOk">Continuar</button></div>';
   $('#modal').hidden=false; $('#mOk').onclick=closeModal; $('#mOk').focus(); if(sheetKind==='shop')openShop();}
 function showMigrated(){if(!migratedMsg&&migratedMsg!==0)return; const m=$('#mcard');
-  m.innerHTML='<h3>Mapa novo!</h3><p>A Cidade Viva ganhou um mapa maior, com rio, lago e mar. Seu nível, XP e moedas foram mantidos'+(migratedMsg?' e as construções antigas viraram '+fmtN(migratedMsg)+' moedas de volta':'')+'.</p><div class="acts"><button class="pill gold" id="mOk">Bora construir</button></div>';
+  m.innerHTML='<h3>Mapa novo!</h3><p>A MathCity ganhou um mapa maior, com rio, lago e mar. Seu nível, XP e moedas foram mantidos'+(migratedMsg?' e as construções antigas viraram '+fmtN(migratedMsg)+' moedas de volta':'')+'.</p><div class="acts"><button class="pill gold" id="mOk">Bora construir</button></div>';
   $('#modal').hidden=false; $('#mOk').onclick=closeModal; migratedMsg=null;}
 function toast(msg){const el=document.createElement('div'); el.className='toast'; el.textContent=msg; const box=$('#toasts'); box.appendChild(el);
   while(box.children.length>3)box.firstChild.remove(); setTimeout(()=>el.remove(),2600);}
@@ -3936,7 +3936,7 @@ function placeLine(){const k=mode.k; let n=0,spent=0; for(const [x,y] of mode.li
   toast(n?n+' construído(s) em linha (−'+fmtN(spent)+')':'Nada coube nessa linha'); mode.line=null; mode.anchor=null; if(!canBuy(k,true))setMode({t:'idle'}); else updatePlaceBar();}
 
 /* ---- Backup do save em arquivo ---- */
-async function backupSave(){saveNow(); const json=serialize(); const name='cidade-viva-'+(S.name||'cidade').replace(/[^\w\-]+/g,'-').toLowerCase()+'-'+new Date().toISOString().slice(0,10)+'.json';
+async function backupSave(){saveNow(); const json=serialize(); const name='mathcity-'+(S.name||'cidade').replace(/[^\w\-]+/g,'-').toLowerCase()+'-'+new Date().toISOString().slice(0,10)+'.json';
   try{const dl=window.claude&&window.claude.use?await window.claude.use('downloads'):null;
     if(dl){await dl.save({filename:name,data:json}); toast('Backup salvo'); return;}}
   catch(e){if(e&&e.code==='declined'){toast('Backup cancelado');return;} if(e&&e.code==='rate_limited'){toast('Espere um pouco e tente de novo');return;}}
@@ -3944,11 +3944,11 @@ async function backupSave(){saveNow(); const json=serialize(); const name='cidad
   catch(e){toast('Não consegui baixar o arquivo aqui');}}
 function restoreFile(file){const rd=new FileReader(); rd.onload=()=>{try{const s=JSON.parse(rd.result); if(!s||!Array.isArray(s.b))throw 0;
     confirmBox('Restaurar este backup?','A cidade atual será trocada pela do arquivo ('+(s.name||'sem nome')+', nível '+(s.lv||1)+').','Restaurar',()=>{if(hydrate(s)){cars=[]; peds=[]; ckFreeAll(); afterLoad(); saveNow(); toast('Backup restaurado');} else toast('Arquivo inválido');});}
-  catch(e){toast('Esse arquivo não é um backup da Cidade Viva');}}; rd.readAsText(file);}
+  catch(e){toast('Esse arquivo não é um backup da MathCity');}}; rd.readAsText(file);}
 
 /* ---- HUD: clima e nome da cidade ---- */
 function updateWx(){const el=$('#wx'); if(!el||!S)return; const w=weatherNow(Date.now()); el.textContent=w.ico+' '+w.name; el.title=S.name+' · '+w.name+(w.k===2?': plantações crescem 50% mais rápido':'');
-  document.title=S.name&&S.name!=='Cidade Viva'?S.name+' · Cidade Viva':'Cidade Viva';}
+  document.title=S.name&&S.name!=='Minha Cidade'?S.name+' · MathCity':'MathCity';}
 
 $('#wx').onclick=()=>{if(sheetKind==='city'&&cityTab==='resumo')closeSheet(); else openCity('resumo');};
 $('#restoreIn').onchange=e=>{const f=e.target.files[0]; if(f)restoreFile(f); e.target.value='';};

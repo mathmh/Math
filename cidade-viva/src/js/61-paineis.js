@@ -207,7 +207,7 @@ function showLevelUp(){const L=levelQueue.shift(); if(L==null)return;
     '<div class="acts"><button class="pill gold" id="mOk">Continuar</button></div>';
   $('#modal').hidden=false; $('#mOk').onclick=closeModal; $('#mOk').focus(); if(sheetKind==='shop')openShop();}
 function showMigrated(){if(!migratedMsg&&migratedMsg!==0)return; const m=$('#mcard');
-  m.innerHTML='<h3>Mapa novo!</h3><p>A Cidade Viva ganhou um mapa maior, com rio, lago e mar. Seu nível, XP e moedas foram mantidos'+(migratedMsg?' e as construções antigas viraram '+fmtN(migratedMsg)+' moedas de volta':'')+'.</p><div class="acts"><button class="pill gold" id="mOk">Bora construir</button></div>';
+  m.innerHTML='<h3>Mapa novo!</h3><p>A MathCity ganhou um mapa maior, com rio, lago e mar. Seu nível, XP e moedas foram mantidos'+(migratedMsg?' e as construções antigas viraram '+fmtN(migratedMsg)+' moedas de volta':'')+'.</p><div class="acts"><button class="pill gold" id="mOk">Bora construir</button></div>';
   $('#modal').hidden=false; $('#mOk').onclick=closeModal; migratedMsg=null;}
 function toast(msg){const el=document.createElement('div'); el.className='toast'; el.textContent=msg; const box=$('#toasts'); box.appendChild(el);
   while(box.children.length>3)box.firstChild.remove(); setTimeout(()=>el.remove(),2600);}

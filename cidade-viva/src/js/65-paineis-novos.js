@@ -113,7 +113,7 @@ function placeLine(){const k=mode.k; let n=0,spent=0; for(const [x,y] of mode.li
   toast(n?n+' construído(s) em linha (−'+fmtN(spent)+')':'Nada coube nessa linha'); mode.line=null; mode.anchor=null; if(!canBuy(k,true))setMode({t:'idle'}); else updatePlaceBar();}
 
 /* ---- Backup do save em arquivo ---- */
-async function backupSave(){saveNow(); const json=serialize(); const name='cidade-viva-'+(S.name||'cidade').replace(/[^\w\-]+/g,'-').toLowerCase()+'-'+new Date().toISOString().slice(0,10)+'.json';
+async function backupSave(){saveNow(); const json=serialize(); const name='mathcity-'+(S.name||'cidade').replace(/[^\w\-]+/g,'-').toLowerCase()+'-'+new Date().toISOString().slice(0,10)+'.json';
   try{const dl=window.claude&&window.claude.use?await window.claude.use('downloads'):null;
     if(dl){await dl.save({filename:name,data:json}); toast('Backup salvo'); return;}}
   catch(e){if(e&&e.code==='declined'){toast('Backup cancelado');return;} if(e&&e.code==='rate_limited'){toast('Espere um pouco e tente de novo');return;}}
@@ -121,11 +121,11 @@ async function backupSave(){saveNow(); const json=serialize(); const name='cidad
   catch(e){toast('Não consegui baixar o arquivo aqui');}}
 function restoreFile(file){const rd=new FileReader(); rd.onload=()=>{try{const s=JSON.parse(rd.result); if(!s||!Array.isArray(s.b))throw 0;
     confirmBox('Restaurar este backup?','A cidade atual será trocada pela do arquivo ('+(s.name||'sem nome')+', nível '+(s.lv||1)+').','Restaurar',()=>{if(hydrate(s)){cars=[]; peds=[]; ckFreeAll(); afterLoad(); saveNow(); toast('Backup restaurado');} else toast('Arquivo inválido');});}
-  catch(e){toast('Esse arquivo não é um backup da Cidade Viva');}}; rd.readAsText(file);}
+  catch(e){toast('Esse arquivo não é um backup da MathCity');}}; rd.readAsText(file);}
 
 /* ---- HUD: clima e nome da cidade ---- */
 function updateWx(){const el=$('#wx'); if(!el||!S)return; const w=weatherNow(Date.now()); el.textContent=w.ico+' '+w.name; el.title=S.name+' · '+w.name+(w.k===2?': plantações crescem 50% mais rápido':'');
-  document.title=S.name&&S.name!=='Cidade Viva'?S.name+' · Cidade Viva':'Cidade Viva';}
+  document.title=S.name&&S.name!=='Minha Cidade'?S.name+' · MathCity':'MathCity';}
 
 $('#wx').onclick=()=>{if(sheetKind==='city'&&cityTab==='resumo')closeSheet(); else openCity('resumo');};
 $('#restoreIn').onchange=e=>{const f=e.target.files[0]; if(f)restoreFile(f); e.target.value='';};

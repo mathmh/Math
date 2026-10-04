@@ -1,4 +1,4 @@
-# Cidade Viva
+# MathCity
 
 Jogo de construir cidade (estilo CityVille) para jogar sozinho. O artifact publicado é um arquivo só (`index.html`), gerado a partir dos arquivos em `src/`.
 
@@ -75,5 +75,5 @@ No celular, o modo econômico liga sozinho: resolução menor, 30 quadros por se
 ## Android (Capacitor) e PWA
 
 - A pasta `app-www/` é o jogo pronto para o app: o `node build.js` gera ali um `index.html` que usa o `pixi.min.js` da própria pasta e copia as imagens para `app-www/img/`, então funciona sem internet.
-- Capacitor: `npm i @capacitor/core @capacitor/cli @capacitor/android`, `npx cap init "Cidade Viva" br.cidadeviva.app --web-dir=www`, copie o conteúdo de `app-www/` para `www/`, depois `npx cap add android` e `npx cap open android`.
+- Capacitor: `npm i @capacitor/core @capacitor/cli @capacitor/android`, `npx cap init "MathCity" br.cidadeviva.app --web-dir=www`, copie o conteúdo de `app-www/` para `www/`, depois `npx cap add android` e `npx cap open android`.
 - O save fica no `localStorage`; fora do claude.ai não existe o salvamento na conta, então use Menu → Backup para guardar o arquivo.

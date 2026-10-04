@@ -155,7 +155,7 @@ function hydrate(s){if(!s||!Array.isArray(s.b)||s.v!==SAVE_VER)return false;
   if(!s.col)s.col={}; if(!s.ord)s.ord=[]; if(!s.ordT)s.ordT=[0,0,0]; if(s.title==null)s.title=0; if(!s.taxT)s.taxT=Date.now();
   S=s; G=g; mapVer++; return true;}
 // campos novos da versão 4 (leis, tecnologia, pedidos, cadeias, histórico...)
-function fillNewState(s,now){if(!s.name)s.name='Cidade Viva'; if(!s.laws)s.laws={}; if(!s.lawT)s.lawT=now; if(!s.tech)s.tech=[]; if(s.rp==null)s.rp=0; if(!s.rpT)s.rpT=now;
+function fillNewState(s,now){if(!s.name||s.name==='Cidade Viva')s.name='Minha Cidade'; if(!s.laws)s.laws={}; if(!s.lawT)s.lawT=now; if(!s.tech)s.tech=[]; if(s.rp==null)s.rp=0; if(!s.rpT)s.rpT=now;
   if(!s.chain)s.chain={}; if(!s.chainBase)s.chainBase={}; if(!s.unl)s.unl={}; if(!s.req)s.req=[]; if(!s.reqT)s.reqT=now+90000; if(s.reqDone==null)s.reqDone=0;
   if(!s.hist)s.hist=[]; if(!s.histT)s.histT=0; if(!s.fireT)s.fireT=now+5*60000;
   for(const k of ['ore','lime'])if(s.inv&&s.inv[k]==null)s.inv[k]=0;
